@@ -1,0 +1,170 @@
+<Window x:Class="VerbitApiClient.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Verbit API - Create New Job" Height="750" Width="900"
+        WindowStartupLocation="CenterScreen">
+    <DockPanel>
+        <!-- Menu Bar -->
+        <Menu DockPanel.Dock="Top" Background="#F5F5F5">
+            <MenuItem Header="API Features">
+                <MenuItem Header="Create New Job" Click="CreateJobMenuItem_Click">
+                    <MenuItem.Icon>
+                        <TextBlock Text="📝" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="Update Connection Plan" Click="ConnectionPlanMenuItem_Click">
+                    <MenuItem.Icon>
+                        <TextBlock Text="🔄" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+            </MenuItem>
+            <MenuItem Header="Help">
+                <MenuItem Header="API Documentation" Click="DocumentationMenuItem_Click">
+                    <MenuItem.Icon>
+                        <TextBlock Text="📚" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="About" Click="AboutMenuItem_Click">
+                    <MenuItem.Icon>
+                        <TextBlock Text="ℹ️" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+            </MenuItem>
+        </Menu>
+
+        <Grid Margin="20">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="200"/>
+            </Grid.RowDefinitions>
+
+            <!-- Header -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,20">
+            <TextBlock Text="Verbit API - Create New Job" FontSize="24" FontWeight="Bold" Margin="0,0,0,10"/>
+            <TextBlock Text="POST /api/job/new" FontSize="14" Foreground="Gray"/>
+        </StackPanel>
+
+        <!-- Input Form -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <!-- API Configuration -->
+                <GroupBox Header="API Configuration" Margin="0,0,0,15">
+                    <StackPanel Margin="10">
+                        <CheckBox x:Name="UseSandboxCheckBox" Content="Use Sandbox Environment" Margin="0,0,0,10"/>
+
+                        <TextBlock Text="API Token *" FontWeight="Bold" Margin="0,0,0,5"/>
+                        <PasswordBox x:Name="ApiTokenBox" Height="30" Margin="0,0,0,15"/>
+
+                        <TextBlock Text="Customer ID (for OAuth)" FontWeight="Bold" Margin="0,0,0,5"/>
+                        <TextBox x:Name="CustomerIdBox" Height="30" Margin="0,0,0,10"/>
+                    </StackPanel>
+                </GroupBox>
+
+                <!-- Required Parameters -->
+                <GroupBox Header="Required Parameters" Margin="0,0,0,15">
+                    <StackPanel Margin="10">
+                        <TextBlock Text="Profile *" FontWeight="Bold" Margin="0,0,0,5"/>
+                        <Grid Margin="0,0,0,15">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <ComboBox x:Name="ProfileBox" Height="30" Grid.Column="0" Margin="0,0,10,0" IsEditable="False"/>
+                            <Button x:Name="LoadProfilesButton" Content="Load Profiles" Height="30" Grid.Column="1" Width="120" Click="LoadProfilesButton_Click"/>
+                        </Grid>
+
+                        <TextBlock Text="API Version *" FontWeight="Bold" Margin="0,0,0,5"/>
+                        <TextBox x:Name="VersionBox" Text="4" Height="30" Margin="0,0,0,10"/>
+                    </StackPanel>
+                </GroupBox>
+
+                <!-- Schedule Parameters -->
+                <GroupBox Header="Schedule (Optional)" Margin="0,0,0,15">
+                    <StackPanel Margin="10">
+                        <TextBlock Text="Start At (ISO 8601 format, e.g., 2023-02-09T08:24:47.639715+00:00)" FontWeight="Bold" Margin="0,0,0,5"/>
+                        <TextBox x:Name="ScheduleStartAtBox" Height="30" Margin="0,0,0,15"/>
+
+                        <TextBlock Text="Max Duration (minutes)" FontWeight="Bold" Margin="0,0,0,5"/>
+                        <TextBox x:Name="ScheduleMaxDurationBox" Height="30" Margin="0,0,0,15"/>
+
+                        <TextBlock Text="Timezone (e.g., EST, UTC, Europe/London)" FontWeight="Bold" Margin="0,0,0,5"/>
+                        <TextBox x:Name="ScheduleTimezoneBox" Height="30" Margin="0,0,0,15"/>
+
+                        <CheckBox x:Name="ScheduleRecurrenceCheckBox" Content="Recurrence" Margin="0,0,0,10"/>
+                    </StackPanel>
+                </GroupBox>
+
+                <!-- Optional Parameters -->
+                <GroupBox Header="Optional Parameters" Margin="0,0,0,15">
+                    <StackPanel Margin="10">
+                        <TextBlock Text="Job Name" FontWeight="Bold" Margin="0,0,0,5"/>
+                        <TextBox x:Name="JobNameBox" Height="30" Margin="0,0,0,15"/>
+
+                        <TextBlock Text="External ID" FontWeight="Bold" Margin="0,0,0,5"/>
+                        <TextBox x:Name="ExternalIdBox" Height="30" Margin="0,0,0,15"/>
+
+                        <TextBlock Text="Language (e.g., en-US)" FontWeight="Bold" Margin="0,0,0,5"/>
+                        <TextBox x:Name="LanguageBox" Height="30" Margin="0,0,0,15"/>
+
+                        <TextBlock Text="Dynamic Dictionary (JSON array of strings)" FontWeight="Bold" Margin="0,0,0,5"/>
+                        <TextBox x:Name="DynamicDictionaryBox" Height="60" TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" Margin="0,0,0,15"/>
+
+                        <TextBlock Text="Permissions (comma-separated)" FontWeight="Bold" Margin="0,0,0,5"/>
+                        <TextBox x:Name="PermissionsBox" Height="30" Margin="0,0,0,15"/>
+
+                        <TextBlock Text="Labels (comma-separated)" FontWeight="Bold" Margin="0,0,0,5"/>
+                        <TextBox x:Name="LabelsBox" Height="30" Margin="0,0,0,15"/>
+
+                        <TextBlock Text="Job Metadata (JSON object)" FontWeight="Bold" Margin="0,0,0,5"/>
+                        <TextBox x:Name="JobMetadataBox" Height="80" TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" Margin="0,0,0,10"/>
+                    </StackPanel>
+                </GroupBox>
+
+                <!-- Translation Parameters -->
+                <GroupBox Header="Translation Parameters (Optional)" Margin="0,0,0,15">
+                    <StackPanel Margin="10">
+                        <TextBlock Text="Translation Profile" FontWeight="Bold" Margin="0,0,0,5"/>
+                        <TextBox x:Name="TranslationProfileBox" Height="30" Margin="0,0,0,15"/>
+
+                        <TextBlock Text="Translation Processing Mode" FontWeight="Bold" Margin="0,0,0,5"/>
+                        <ComboBox x:Name="TranslationModeCombo" Height="30" Margin="0,0,0,15">
+                            <ComboBoxItem Content="" IsSelected="True"/>
+                            <ComboBoxItem Content="standard"/>
+                            <ComboBoxItem Content="rush"/>
+                        </ComboBox>
+
+                        <TextBlock Text="Translation Languages (comma-separated, e.g., es-ES,fr-FR)" FontWeight="Bold" Margin="0,0,0,5"/>
+                        <TextBox x:Name="TranslationLanguagesBox" Height="30" Margin="0,0,0,10"/>
+                    </StackPanel>
+                </GroupBox>
+
+                <!-- Order Details -->
+                <GroupBox Header="Order Details (Optional)" Margin="0,0,0,15">
+                    <StackPanel Margin="10">
+                        <TextBlock Text="PO Number" FontWeight="Bold" Margin="0,0,0,5"/>
+                        <TextBox x:Name="PoNumberBox" Height="30" Margin="0,0,0,15"/>
+
+                        <TextBlock Text="Cost Center" FontWeight="Bold" Margin="0,0,0,5"/>
+                        <TextBox x:Name="CostCenterBox" Height="30" Margin="0,0,0,10"/>
+                    </StackPanel>
+                </GroupBox>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Action Buttons -->
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,15,0,15">
+            <Button x:Name="ClearButton" Content="Clear Form" Width="100" Height="35" Margin="0,0,10,0" Click="ClearButton_Click"/>
+            <Button x:Name="SubmitButton" Content="Create Job" Width="120" Height="35" Background="#007ACC" Foreground="White" FontWeight="Bold" Click="SubmitButton_Click"/>
+        </StackPanel>
+
+        <!-- Response Area -->
+        <GroupBox Grid.Row="3" Header="Response" Margin="0,0,0,0">
+            <Grid>
+                <TextBox x:Name="ResponseBox" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" FontFamily="Consolas" FontSize="12" Padding="10"/>
+            </Grid>
+        </GroupBox>
+        </Grid>
+    </DockPanel>
+</Window>
