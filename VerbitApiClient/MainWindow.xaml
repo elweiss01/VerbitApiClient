@@ -55,7 +55,16 @@
                         <CheckBox x:Name="UseSandboxCheckBox" Content="Use Sandbox Environment" Margin="0,0,0,10"/>
 
                         <TextBlock Text="API Token *" FontWeight="Bold" Margin="0,0,0,5"/>
-                        <PasswordBox x:Name="ApiTokenBox" Height="30" Margin="0,0,0,15"/>
+                        <PasswordBox x:Name="ApiTokenBox" Height="30" Margin="0,0,0,10"/>
+
+                        <Grid Margin="0,0,0,15">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Button x:Name="GenerateBearerTokenButton" Content="Generate Bearer Token" Height="30" Grid.Column="0" Width="180" Click="GenerateBearerTokenButton_Click" Margin="0,0,10,0"/>
+                            <TextBlock x:Name="TokenStatusLabel" Text="No bearer token generated" Grid.Column="1" VerticalAlignment="Center" Foreground="Gray" FontStyle="Italic"/>
+                        </Grid>
 
                         <TextBlock Text="Customer ID (for OAuth)" FontWeight="Bold" Margin="0,0,0,5"/>
                         <TextBox x:Name="CustomerIdBox" Height="30" Margin="0,0,0,10"/>
@@ -83,8 +92,41 @@
                 <!-- Schedule Parameters -->
                 <GroupBox Header="Schedule (Optional)" Margin="0,0,0,15">
                     <StackPanel Margin="10">
-                        <TextBlock Text="Start At (ISO 8601 format, e.g., 2023-02-09T08:24:47.639715+00:00)" FontWeight="Bold" Margin="0,0,0,5"/>
-                        <TextBox x:Name="ScheduleStartAtBox" Height="30" Margin="0,0,0,15"/>
+                        <TextBlock Text="Start At" FontWeight="Bold" Margin="0,0,0,5"/>
+                        <TextBlock Text="Select date and time (ISO 8601 format will be automatically generated)" FontSize="11" Foreground="Gray" Margin="0,0,0,5"/>
+                        
+                        <Grid Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                                <TextBlock Text="Date:" FontSize="11" Margin="0,0,0,3"/>
+                                <DatePicker x:Name="ScheduleStartDatePicker" Height="30"/>
+                            </StackPanel>
+                            
+                            <StackPanel Grid.Column="2" Margin="10,0,0,0">
+                                <TextBlock Text="Time:" FontSize="11" Margin="0,0,0,3"/>
+                                <Grid Height="30">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox x:Name="ScheduleStartHourBox" Height="30" Grid.Column="0" Text="00" TextAlignment="Center"/>
+                                    <TextBlock Text=":" Grid.Column="1" VerticalAlignment="Center" Margin="5,0,5,0"/>
+                                    <TextBox x:Name="ScheduleStartMinuteBox" Height="30" Grid.Column="2" Text="00" TextAlignment="Center"/>
+                                    <TextBlock Text=":" Grid.Column="3" VerticalAlignment="Center" Margin="5,0,5,0"/>
+                                    <TextBox x:Name="ScheduleStartSecondBox" Height="30" Grid.Column="4" Text="00" TextAlignment="Center"/>
+                                </Grid>
+                            </StackPanel>
+                        </Grid>
+                        
+                        <TextBlock x:Name="ScheduleStartAtPreviewLabel" Text="Preview: (not set)" FontSize="10" Foreground="Gray" Margin="0,0,0,15"/>
 
                         <TextBlock Text="Max Duration (minutes)" FontWeight="Bold" Margin="0,0,0,5"/>
                         <TextBox x:Name="ScheduleMaxDurationBox" Height="30" Margin="0,0,0,15"/>

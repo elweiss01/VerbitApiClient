@@ -24,9 +24,17 @@
                 <!-- Authentication -->
                 <GroupBox Header="Authentication" Margin="0,0,0,15">
                     <StackPanel Margin="10">
-                        <TextBlock Text="Bearer Token *" FontWeight="Bold" Margin="0,0,0,5"/>
-                        <TextBlock Text="Obtain from your Verbit account credentials" FontSize="11" Foreground="Gray" Margin="0,0,0,5"/>
-                        <PasswordBox x:Name="BearerTokenBox" Height="30" Margin="0,0,0,10"/>
+                        <TextBlock Text="API Token *" FontWeight="Bold" Margin="0,0,0,5"/>
+                        <PasswordBox x:Name="ApiTokenBox" Height="30" Margin="0,0,0,10"/>
+
+                        <Grid Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Button x:Name="GenerateBearerTokenButton" Content="Generate Bearer Token" Height="30" Grid.Column="0" Width="180" Click="GenerateBearerTokenButton_Click" Margin="0,0,10,0"/>
+                            <TextBlock x:Name="TokenStatusLabel" Text="No bearer token generated" Grid.Column="1" VerticalAlignment="Center" Foreground="Gray" FontStyle="Italic"/>
+                        </Grid>
                     </StackPanel>
                 </GroupBox>
 
@@ -37,9 +45,20 @@
                         <TextBlock Text="The order identifier for the session" FontSize="11" Foreground="Gray" Margin="0,0,0,5"/>
                         <TextBox x:Name="OrderIdBox" Height="30" Margin="0,0,0,15"/>
 
-                        <TextBlock Text="Connection Plan ID *" FontWeight="Bold" Margin="0,0,0,5"/>
-                        <TextBlock Text="The identifier for the connection plan template to apply" FontSize="11" Foreground="Gray" Margin="0,0,0,5"/>
-                        <TextBox x:Name="ConnectionPlanIdBox" Height="30" Margin="0,0,0,10"/>
+                        <TextBlock Text="Connection Plan *" FontWeight="Bold" Margin="0,0,0,5"/>
+                        <TextBlock Text="Select from available connection plans for your account" FontSize="11" Foreground="Gray" Margin="0,0,0,5"/>
+                        
+                        <Grid Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <ComboBox x:Name="ConnectionPlanComboBox" Height="30" Grid.Column="0" Margin="0,0,10,0"/>
+                            <Button x:Name="FetchConnectionPlansButton" Content="Fetch Plans" Height="30" Grid.Column="1" Width="120" Click="FetchConnectionPlansButton_Click"/>
+                        </Grid>
+                        
+                        <TextBlock x:Name="SelectedPlanIdLabel" Text="Selected Plan ID: (None)" FontSize="10" Foreground="Gray" Margin="0,0,0,10"/>
+                        <TextBlock x:Name="ConnectionPlansStatusLabel" Text="Click 'Fetch Plans' to load available connection plans" FontSize="10" Foreground="Gray" FontStyle="Italic"/>
                     </StackPanel>
                 </GroupBox>
 

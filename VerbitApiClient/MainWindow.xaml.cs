@@ -24,11 +24,124 @@ namespace VerbitApiClient
     public partial class MainWindow : Window
     {
         private readonly HttpClient _httpClient;
+        private string _bearerToken = string.Empty;
 
         public MainWindow()
         {
             InitializeComponent();
             _httpClient = new HttpClient();
+            
+            // Setup date/time picker events to update preview
+            ScheduleStartDatePicker.SelectedDateChanged += ScheduleDateTime_Changed;
+            ScheduleStartHourBox.TextChanged += ScheduleDateTime_Changed;
+            ScheduleStartMinuteBox.TextChanged += ScheduleDateTime_Changed;
+            ScheduleStartSecondBox.TextChanged += ScheduleDateTime_Changed;
+            ScheduleTimezoneBox.TextChanged += ScheduleDateTime_Changed;
+        }
+
+        private void ScheduleDateTime_Changed(object? sender, EventArgs e)
+        {
+            UpdateSchedulePreview();
+        }
+
+        private void UpdateSchedulePreview()
+        {
+            try
+            {
+                if (ScheduleStartDatePicker.SelectedDate == null)
+                {
+                    ScheduleStartAtPreviewLabel.Text = "Preview: (not set)";
+                    return;
+                }
+
+                if (!int.TryParse(ScheduleStartHourBox.Text, out int hour) || hour < 0 || hour > 23)
+                {
+                    ScheduleStartAtPreviewLabel.Text = "Preview: (invalid hour)";
+                    return;
+                }
+
+                if (!int.TryParse(ScheduleStartMinuteBox.Text, out int minute) || minute < 0 || minute > 59)
+                {
+                    ScheduleStartAtPreviewLabel.Text = "Preview: (invalid minute)";
+                    return;
+                }
+
+                if (!int.TryParse(ScheduleStartSecondBox.Text, out int second) || second < 0 || second > 59)
+                {
+                    ScheduleStartAtPreviewLabel.Text = "Preview: (invalid second)";
+                    return;
+                }
+
+                var selectedDate = ScheduleStartDatePicker.SelectedDate.Value;
+                var dateTime = new DateTime(selectedDate.Year, selectedDate.Month, selectedDate.Day, hour, minute, second);
+
+                // Get timezone offset
+                string timezone = ScheduleTimezoneBox.Text.Trim();
+                string offset = "+00:00"; // Default to UTC
+
+                if (!string.IsNullOrWhiteSpace(timezone))
+                {
+                    offset = GetTimezoneOffset(timezone);
+                }
+
+                // Format as ISO 8601 with milliseconds
+                string isoFormat = dateTime.ToString("yyyy-MM-ddTHH:mm:ss.fff") + offset;
+                ScheduleStartAtPreviewLabel.Text = $"Preview: {isoFormat}";
+            }
+            catch
+            {
+                ScheduleStartAtPreviewLabel.Text = "Preview: (invalid input)";
+            }
+        }
+
+        private string GetTimezoneOffset(string timezone)
+        {
+            // Map common timezone abbreviations to UTC offsets
+            var timezoneMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                { "UTC", "+00:00" },
+                { "GMT", "+00:00" },
+                { "EST", "-05:00" },
+                { "EDT", "-04:00" },
+                { "CST", "-06:00" },
+                { "CDT", "-05:00" },
+                { "MST", "-07:00" },
+                { "MDT", "-06:00" },
+                { "PST", "-08:00" },
+                { "PDT", "-07:00" },
+                { "BST", "+01:00" },
+                { "IST", "+05:30" },
+                { "AEST", "+10:00" },
+                { "AEDT", "+11:00" },
+                { "JST", "+09:00" },
+                { "CET", "+01:00" },
+                { "CEST", "+02:00" },
+            };
+
+            if (timezoneMap.TryGetValue(timezone, out string? offset))
+            {
+                return offset;
+            }
+
+            // If it looks like an offset already (e.g., +05:30), return it
+            if (timezone.StartsWith("+") || timezone.StartsWith("-"))
+            {
+                return timezone;
+            }
+
+            // Try to parse as a timezone identifier
+            try
+            {
+                TimeZoneInfo tzi = TimeZoneInfo.FindSystemTimeZoneById(timezone);
+                DateTime now = DateTime.Now;
+                TimeSpan utcOffset = tzi.GetUtcOffset(now);
+                return utcOffset.ToString(@"hh\:mm");
+            }
+            catch
+            {
+                // Default to UTC if unable to parse
+                return "+00:00";
+            }
         }
 
         private async void SubmitButton_Click(object sender, RoutedEventArgs e)
@@ -40,10 +153,10 @@ namespace VerbitApiClient
                 SubmitButton.Content = "Creating Job...";
                 ResponseBox.Text = "Sending request...";
 
-                // Validate required fields
-                if (string.IsNullOrWhiteSpace(GetPasswordBoxText(ApiTokenBox)))
+                // Validate bearer token is generated
+                if (string.IsNullOrWhiteSpace(_bearerToken))
                 {
-                    ShowError("API Token is required");
+                    ShowError("Please generate a bearer token first");
                     return;
                 }
 
@@ -71,9 +184,8 @@ namespace VerbitApiClient
                 // Create HTTP request
                 var request = new HttpRequestMessage(HttpMethod.Post, url);
 
-                // Add authorization header
-                string apiToken = GetPasswordBoxText(ApiTokenBox);
-                request.Headers.Add("Authorization", $"ApiToken {apiToken}");
+                // Add authorization header with bearer token
+                request.Headers.Add("Authorization", $"Bearer {_bearerToken}");
 
                 // Add content
                 string jsonContent = JsonConvert.SerializeObject(requestBody, Formatting.Indented);
@@ -98,14 +210,92 @@ namespace VerbitApiClient
             }
         }
 
-        private async void LoadProfilesButton_Click(object sender, RoutedEventArgs e)
+        private async void GenerateBearerTokenButton_Click(object sender, RoutedEventArgs e)
         {
             try
             {
                 // Validate API token is provided
                 if (string.IsNullOrWhiteSpace(GetPasswordBoxText(ApiTokenBox)))
                 {
-                    ShowError("Please enter your API Token before loading profiles");
+                    ShowError("Please enter your API Token before generating bearer token");
+                    return;
+                }
+
+                // Disable button during request
+                GenerateBearerTokenButton.IsEnabled = false;
+                GenerateBearerTokenButton.Content = "Generating...";
+                TokenStatusLabel.Text = "Generating bearer token...";
+                TokenStatusLabel.Foreground = System.Windows.Media.Brushes.Orange;
+
+                // Build the auth endpoint URL
+                string url = "https://users.verbit.co/api/v1/auth";
+
+                // Create request body
+                var requestBody = new
+                {
+                    data = new
+                    {
+                        api_key = GetPasswordBoxText(ApiTokenBox)
+                    }
+                };
+
+                // Create HTTP request
+                var request = new HttpRequestMessage(HttpMethod.Post, url);
+                string jsonContent = JsonConvert.SerializeObject(requestBody);
+                request.Content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
+
+                // Send request
+                var response = await _httpClient.SendAsync(request);
+                string responseContent = await response.Content.ReadAsStringAsync();
+
+                if (response.IsSuccessStatusCode)
+                {
+                    // Parse the response
+                    var jsonResponse = JObject.Parse(responseContent);
+                    _bearerToken = jsonResponse["token"]?.ToString() ?? string.Empty;
+
+                    if (!string.IsNullOrWhiteSpace(_bearerToken))
+                    {
+                        TokenStatusLabel.Text = "Bearer token generated successfully (valid for 24 hours)";
+                        TokenStatusLabel.Foreground = System.Windows.Media.Brushes.Green;
+                        ResponseBox.Text = "Bearer token generated successfully! You can now use the API features.";
+                    }
+                    else
+                    {
+                        ShowError("Failed to extract bearer token from response");
+                    }
+                }
+                else
+                {
+                    _bearerToken = string.Empty;
+                    TokenStatusLabel.Text = "Failed to generate bearer token";
+                    TokenStatusLabel.Foreground = System.Windows.Media.Brushes.Red;
+                    ShowError($"Failed to generate bearer token: {response.StatusCode}\n{responseContent}");
+                }
+            }
+            catch (Exception ex)
+            {
+                _bearerToken = string.Empty;
+                TokenStatusLabel.Text = "Error generating bearer token";
+                TokenStatusLabel.Foreground = System.Windows.Media.Brushes.Red;
+                ShowError($"Error generating bearer token: {ex.Message}");
+            }
+            finally
+            {
+                // Re-enable button
+                GenerateBearerTokenButton.IsEnabled = true;
+                GenerateBearerTokenButton.Content = "Generate Bearer Token";
+            }
+        }
+
+        private async void LoadProfilesButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                // Validate bearer token is generated
+                if (string.IsNullOrWhiteSpace(_bearerToken))
+                {
+                    ShowError("Please generate a bearer token before loading profiles");
                     return;
                 }
 
@@ -120,9 +310,8 @@ namespace VerbitApiClient
                 // Create HTTP request
                 var request = new HttpRequestMessage(HttpMethod.Get, url);
 
-                // Add authorization header
-                string apiToken = GetPasswordBoxText(ApiTokenBox);
-                request.Headers.Add("Authorization", $"ApiToken {apiToken}");
+                // Add authorization header with bearer token
+                request.Headers.Add("Authorization", $"Bearer {_bearerToken}");
 
                 // Send request
                 var response = await _httpClient.SendAsync(request);
@@ -285,16 +474,44 @@ namespace VerbitApiClient
             }
 
             // Add schedule
-            if (!string.IsNullOrWhiteSpace(ScheduleStartAtBox.Text) ||
+            if (ScheduleStartDatePicker.SelectedDate.HasValue ||
                 !string.IsNullOrWhiteSpace(ScheduleMaxDurationBox.Text) ||
                 !string.IsNullOrWhiteSpace(ScheduleTimezoneBox.Text) ||
                 ScheduleRecurrenceCheckBox.IsChecked == true)
             {
                 var schedule = new Dictionary<string, object>();
 
-                if (!string.IsNullOrWhiteSpace(ScheduleStartAtBox.Text))
+                if (ScheduleStartDatePicker.SelectedDate.HasValue)
                 {
-                    schedule["start_at"] = ScheduleStartAtBox.Text;
+                    // Build ISO 8601 datetime from picker values
+                    if (!int.TryParse(ScheduleStartHourBox.Text, out int hour) || hour < 0 || hour > 23)
+                    {
+                        throw new Exception("Start Hour must be a valid hour (0-23)");
+                    }
+                    if (!int.TryParse(ScheduleStartMinuteBox.Text, out int minute) || minute < 0 || minute > 59)
+                    {
+                        throw new Exception("Start Minute must be a valid minute (0-59)");
+                    }
+                    if (!int.TryParse(ScheduleStartSecondBox.Text, out int second) || second < 0 || second > 59)
+                    {
+                        throw new Exception("Start Second must be a valid second (0-59)");
+                    }
+
+                    var selectedDate = ScheduleStartDatePicker.SelectedDate.Value;
+                    var dateTime = new DateTime(selectedDate.Year, selectedDate.Month, selectedDate.Day, hour, minute, second);
+
+                    // Get timezone offset
+                    string timezone = ScheduleTimezoneBox.Text.Trim();
+                    string offset = "+00:00"; // Default to UTC
+
+                    if (!string.IsNullOrWhiteSpace(timezone))
+                    {
+                        offset = GetTimezoneOffset(timezone);
+                    }
+
+                    // Format as ISO 8601 with milliseconds
+                    string isoFormat = dateTime.ToString("yyyy-MM-ddTHH:mm:ss.fff") + offset;
+                    schedule["start_at"] = isoFormat;
                 }
 
                 if (!string.IsNullOrWhiteSpace(ScheduleMaxDurationBox.Text))
@@ -389,6 +606,9 @@ namespace VerbitApiClient
         {
             // Clear all input fields
             ApiTokenBox.Clear();
+            _bearerToken = string.Empty;
+            TokenStatusLabel.Text = "No bearer token generated";
+            TokenStatusLabel.Foreground = System.Windows.Media.Brushes.Gray;
             CustomerIdBox.Clear();
             ProfileBox.Items.Clear();
             ProfileBox.SelectedIndex = -1;
@@ -405,10 +625,14 @@ namespace VerbitApiClient
             TranslationLanguagesBox.Clear();
             PoNumberBox.Clear();
             CostCenterBox.Clear();
-            ScheduleStartAtBox.Clear();
+            ScheduleStartDatePicker.SelectedDate = null;
+            ScheduleStartHourBox.Text = "00";
+            ScheduleStartMinuteBox.Text = "00";
+            ScheduleStartSecondBox.Text = "00";
             ScheduleMaxDurationBox.Clear();
             ScheduleTimezoneBox.Clear();
             ScheduleRecurrenceCheckBox.IsChecked = false;
+            ScheduleStartAtPreviewLabel.Text = "Preview: (not set)";
             ResponseBox.Clear();
             UseSandboxCheckBox.IsChecked = false;
         }
