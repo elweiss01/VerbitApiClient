@@ -1,0 +1,146 @@
+<Window x:Class="VerbitApiClient.CreateOrderWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Create Order with RTMP Input" Height="650" Width="800"
+        WindowStartupLocation="CenterScreen">
+    <DockPanel>
+        <Grid Margin="20">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="200"/>
+            </Grid.RowDefinitions>
+
+            <!-- Header -->
+            <StackPanel Grid.Row="0" Margin="0,0,0,20">
+                <TextBlock Text="Create Order with RTMP Input" FontSize="24" FontWeight="Bold" Margin="0,0,0,10"/>
+                <TextBlock Text="POST /api/v2/orders" FontSize="14" Foreground="Gray"/>
+            </StackPanel>
+
+            <!-- Input Form -->
+            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                <StackPanel>
+                    <!-- API Configuration -->
+                    <GroupBox Header="API Configuration" Margin="0,0,0,15">
+                        <StackPanel Margin="10">
+                            <TextBlock Text="API Token *" FontWeight="Bold" Margin="0,0,0,5"/>
+                            <PasswordBox x:Name="ApiTokenBox" Height="30" Margin="0,0,0,10"/>
+
+                            <Grid Margin="0,0,0,15">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Button x:Name="GenerateBearerTokenButton" Content="Generate Bearer Token" Height="30" Grid.Column="0" Width="180" Click="GenerateBearerTokenButton_Click" Margin="0,0,10,0"/>
+                                <TextBlock x:Name="TokenStatusLabel" Text="No bearer token generated" Grid.Column="1" VerticalAlignment="Center" Foreground="Gray" FontStyle="Italic"/>
+                            </Grid>
+                        </StackPanel>
+                    </GroupBox>
+
+                    <!-- Order Details -->
+                    <GroupBox Header="Order Details" Margin="0,0,0,15">
+                        <StackPanel Margin="10">
+                            <TextBlock Text="Order Name *" FontWeight="Bold" Margin="0,0,0,5"/>
+                            <TextBox x:Name="OrderNameBox" Height="30" Margin="0,0,0,15" Text=""/>
+
+                            <TextBlock Text="Client Transaction ID *" FontWeight="Bold" Margin="0,0,0,5"/>
+                            <TextBox x:Name="ClientTransactionIdBox" Height="30" Margin="0,0,0,15" Text=""/>
+                        </StackPanel>
+                    </GroupBox>
+
+                    <!-- Input Configuration -->
+                    <GroupBox Header="Input Configuration (RTMP)" Margin="0,0,0,15">
+                        <StackPanel Margin="10">
+                            <TextBlock Text="Input Type *" FontWeight="Bold" Margin="0,0,0,5"/>
+                            <ComboBox x:Name="InputTypeCombo" Height="30" Margin="0,0,0,15" SelectionChanged="InputTypeCombo_SelectionChanged">
+                                <ComboBoxItem Content="rtmp_pull" IsSelected="True"/>
+                                <ComboBoxItem Content="rtmp_push"/>
+                            </ComboBox>
+
+                            <TextBlock Text="RTMP URL *" FontWeight="Bold" Margin="0,0,0,5"/>
+                            <TextBox x:Name="UrlBox" Height="30" Margin="0,0,0,15" Text=""/>
+
+                            <TextBlock Text="Stream Key *" FontWeight="Bold" Margin="0,0,0,5"/>
+                            <TextBox x:Name="StreamKeyBox" Height="30" Margin="0,0,0,15" Text=""/>
+                        </StackPanel>
+                    </GroupBox>
+
+                    <!-- Product Configuration -->
+                    <GroupBox Header="Product Configuration" Margin="0,0,0,15">
+                        <StackPanel Margin="10">
+                            <TextBlock Text="Language (e.g., en-US) *" FontWeight="Bold" Margin="0,0,0,5"/>
+                            <TextBox x:Name="LanguageBox" Height="30" Margin="0,0,0,15" Text="en-US"/>
+
+                            <TextBlock Text="Modality *" FontWeight="Bold" Margin="0,0,0,5"/>
+                            <ComboBox x:Name="ModalityCombo" Height="30" Margin="0,0,0,15">
+                                <ComboBoxItem Content="caption" IsSelected="True"/>
+                                <ComboBoxItem Content="interpretation"/>
+                                <ComboBoxItem Content="translation"/>
+                            </ComboBox>
+                        </StackPanel>
+                    </GroupBox>
+
+                    <!-- Delivery Configuration -->
+                    <GroupBox Header="Delivery Configuration" Margin="0,0,0,15">
+                        <StackPanel Margin="10">
+                            <TextBlock Text="Delivery Type *" FontWeight="Bold" Margin="0,0,0,5"/>
+                            <ComboBox x:Name="DeliveryTypeCombo" Height="30" Margin="0,0,0,15">
+                                <ComboBoxItem Content="websocket" IsSelected="True"/>
+                                <ComboBoxItem Content="webhook"/>
+                                <ComboBoxItem Content="zoom"/>
+                            </ComboBox>
+
+                            <TextBlock Text="Delivery Destination (if applicable)" FontWeight="Bold" Margin="0,0,0,5"/>
+                            <TextBox x:Name="DeliveryDestinationBox" Height="30" Margin="0,0,0,15" Text=""/>
+                        </StackPanel>
+                    </GroupBox>
+
+                    <!-- Additional Parameters -->
+                    <GroupBox Header="Additional Parameters (Optional)" Margin="0,0,0,15">
+                        <StackPanel Margin="10">
+                            <TextBlock Text="Start Time (ISO 8601, e.g., 2024-01-25T14:00:00Z)" FontWeight="Bold" Margin="0,0,0,5"/>
+                            <TextBox x:Name="StartTimeBox" Height="30" Margin="0,0,0,15" Text=""/>
+
+                            <TextBlock Text="Contact Name" FontWeight="Bold" Margin="0,0,0,5"/>
+                            <TextBox x:Name="ContactNameBox" Height="30" Margin="0,0,0,15" Text=""/>
+
+                            <TextBlock Text="Contact Email" FontWeight="Bold" Margin="0,0,0,5"/>
+                            <TextBox x:Name="ContactEmailBox" Height="30" Margin="0,0,0,15" Text=""/>
+
+                            <TextBlock Text="Contact Phone" FontWeight="Bold" Margin="0,0,0,5"/>
+                            <TextBox x:Name="ContactPhoneBox" Height="30" Margin="0,0,0,15" Text=""/>
+
+                            <TextBlock Text="Metadata (JSON object)" FontWeight="Bold" Margin="0,0,0,5"/>
+                            <TextBox x:Name="MetadataBox" Height="80" TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" Margin="0,0,0,10"/>
+                        </StackPanel>
+                    </GroupBox>
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- Action Buttons -->
+            <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,15,0,15">
+                <Button x:Name="ClearButton" Content="Clear Form" Width="100" Height="35" Margin="0,0,10,0" Click="ClearButton_Click"/>
+                <Button x:Name="SubmitButton" Content="Create Order" Width="120" Height="35" Background="#007ACC" Foreground="White" FontWeight="Bold" Click="SubmitButton_Click"/>
+            </StackPanel>
+
+            <!-- Response and Logging Area -->
+            <TabControl Grid.Row="3" Margin="0,0,0,0">
+                <TabItem Header="Response">
+                    <GroupBox Header="Response" Margin="0,0,0,0">
+                        <Grid>
+                            <TextBox x:Name="ResponseBox" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" FontFamily="Consolas" FontSize="12" Padding="10"/>
+                        </Grid>
+                    </GroupBox>
+                </TabItem>
+                <TabItem Header="Logging">
+                    <GroupBox Header="Request and Response Logging" Margin="0,0,0,0">
+                        <Grid>
+                            <TextBox x:Name="LoggingBox" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" FontFamily="Consolas" FontSize="12" Padding="10"/>
+                        </Grid>
+                    </GroupBox>
+                </TabItem>
+            </TabControl>
+        </Grid>
+    </DockPanel>
+</Window>

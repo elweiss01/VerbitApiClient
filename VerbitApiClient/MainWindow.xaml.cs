@@ -10,93 +10,112 @@ using Newtonsoft.Json.Linq;
 
 namespace VerbitApiClient
 {
-    public class Profile
-    {
-        public string Name { get; set; } = string.Empty;
-        public int Turnaround { get; set; }
-
-        public override string ToString()
-        {
-            return $"{Name} ({Turnaround}h)";
-        }
-    }
-
     public partial class MainWindow : Window
     {
         private readonly HttpClient _httpClient;
         private string _bearerToken = string.Empty;
+        private readonly StringBuilder _logBuilder = new StringBuilder();
 
         public MainWindow()
         {
             InitializeComponent();
             _httpClient = new HttpClient();
-            
-            // Setup date/time picker events to update preview
-            ScheduleStartDatePicker.SelectedDateChanged += ScheduleDateTime_Changed;
-            ScheduleStartHourBox.TextChanged += ScheduleDateTime_Changed;
-            ScheduleStartMinuteBox.TextChanged += ScheduleDateTime_Changed;
-            ScheduleStartSecondBox.TextChanged += ScheduleDateTime_Changed;
-            ScheduleTimezoneBox.TextChanged += ScheduleDateTime_Changed;
         }
 
-        private void ScheduleDateTime_Changed(object? sender, EventArgs e)
+        private void InputTypeCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            UpdateSchedulePreview();
+            // Skip if controls aren't initialized yet
+            if (UrlTypeCombo == null)
+                return;
+
+            // Update UI based on input type
+            var selectedType = (InputTypeCombo.SelectedItem as ComboBoxItem)?.Content?.ToString();
+            
+            if (selectedType == "web_url")
+            {
+                UrlTypeCombo.IsEnabled = true;
+                UrlTypeCombo.SelectedIndex = 0;
+            }
+            else
+            {
+                UrlTypeCombo.IsEnabled = false;
+            }
         }
 
-        private void UpdateSchedulePreview()
+        private void StartDateTime_Changed(object sender, object e)
+        {
+            UpdateStartAtPreview();
+        }
+
+        private void UpdateStartAtPreview()
         {
             try
             {
-                if (ScheduleStartDatePicker.SelectedDate == null)
+                // Skip if controls aren't initialized yet
+                if (StartDatePicker == null || StartHourBox == null || StartMinuteBox == null || 
+                    StartSecondBox == null || TimezoneBox == null || StartAtBox == null || 
+                    StartAtPreviewLabel == null)
+                    return;
+
+                // Check if date is selected
+                if (!StartDatePicker.SelectedDate.HasValue)
                 {
-                    ScheduleStartAtPreviewLabel.Text = "Preview: (not set)";
+                    StartAtPreviewLabel.Text = "Preview: (date not selected)";
+                    StartAtBox.Text = "";
                     return;
                 }
 
-                if (!int.TryParse(ScheduleStartHourBox.Text, out int hour) || hour < 0 || hour > 23)
+                // Parse time components
+                if (!int.TryParse(StartHourBox.Text, out int hour) || hour < 0 || hour > 23)
                 {
-                    ScheduleStartAtPreviewLabel.Text = "Preview: (invalid hour)";
+                    StartAtPreviewLabel.Text = "Preview: (invalid hour, must be 0-23)";
                     return;
                 }
 
-                if (!int.TryParse(ScheduleStartMinuteBox.Text, out int minute) || minute < 0 || minute > 59)
+                if (!int.TryParse(StartMinuteBox.Text, out int minute) || minute < 0 || minute > 59)
                 {
-                    ScheduleStartAtPreviewLabel.Text = "Preview: (invalid minute)";
+                    StartAtPreviewLabel.Text = "Preview: (invalid minute, must be 0-59)";
                     return;
                 }
 
-                if (!int.TryParse(ScheduleStartSecondBox.Text, out int second) || second < 0 || second > 59)
+                if (!int.TryParse(StartSecondBox.Text, out int second) || second < 0 || second > 59)
                 {
-                    ScheduleStartAtPreviewLabel.Text = "Preview: (invalid second)";
+                    StartAtPreviewLabel.Text = "Preview: (invalid second, must be 0-59)";
                     return;
                 }
 
-                var selectedDate = ScheduleStartDatePicker.SelectedDate.Value;
+                // Build the datetime
+                var selectedDate = StartDatePicker.SelectedDate.Value;
                 var dateTime = new DateTime(selectedDate.Year, selectedDate.Month, selectedDate.Day, hour, minute, second);
 
                 // Get timezone offset
-                string timezone = ScheduleTimezoneBox.Text.Trim();
+                string timezone = TimezoneBox.Text.Trim();
                 string offset = "+00:00"; // Default to UTC
 
-                if (!string.IsNullOrWhiteSpace(timezone))
+                if (!string.IsNullOrWhiteSpace(timezone) && timezone != "America/Los_Angeles")
                 {
                     offset = GetTimezoneOffset(timezone);
                 }
+                else if (timezone == "America/Los_Angeles")
+                {
+                    // Special handling for Los Angeles
+                    offset = "-08:00"; // PST default, or -07:00 for PDT
+                }
 
-                // Format as ISO 8601 with milliseconds
-                string isoFormat = dateTime.ToString("yyyy-MM-ddTHH:mm:ss.fff") + offset;
-                ScheduleStartAtPreviewLabel.Text = $"Preview: {isoFormat}";
+                // Format as ISO 8601 with microseconds (6 digits after decimal)
+                string isoFormat = dateTime.ToString("yyyy-MM-ddTHH:mm:ss.ffffff") + offset;
+                StartAtBox.Text = isoFormat;
+                StartAtPreviewLabel.Text = $"Preview: {isoFormat}";
             }
-            catch
+            catch (Exception ex)
             {
-                ScheduleStartAtPreviewLabel.Text = "Preview: (invalid input)";
+                StartAtPreviewLabel.Text = $"Preview: (error - {ex.Message})";
             }
         }
 
         private string GetTimezoneOffset(string timezone)
         {
-            // Map common timezone abbreviations to UTC offsets
+            // Map common timezone names to UTC offsets
             var timezoneMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
                 { "UTC", "+00:00" },
@@ -109,13 +128,10 @@ namespace VerbitApiClient
                 { "MDT", "-06:00" },
                 { "PST", "-08:00" },
                 { "PDT", "-07:00" },
-                { "BST", "+01:00" },
-                { "IST", "+05:30" },
-                { "AEST", "+10:00" },
-                { "AEDT", "+11:00" },
-                { "JST", "+09:00" },
-                { "CET", "+01:00" },
-                { "CEST", "+02:00" },
+                { "America/Los_Angeles", "-08:00" },
+                { "America/Denver", "-07:00" },
+                { "America/Chicago", "-06:00" },
+                { "America/New_York", "-05:00" },
             };
 
             if (timezoneMap.TryGetValue(timezone, out string? offset))
@@ -123,24 +139,23 @@ namespace VerbitApiClient
                 return offset;
             }
 
-            // If it looks like an offset already (e.g., +05:30), return it
+            // If it looks like an offset already (e.g., +05:30, -07:00), return it
             if (timezone.StartsWith("+") || timezone.StartsWith("-"))
             {
                 return timezone;
             }
 
-            // Try to parse as a timezone identifier
+            // Try to parse as a system timezone identifier
             try
             {
                 TimeZoneInfo tzi = TimeZoneInfo.FindSystemTimeZoneById(timezone);
                 DateTime now = DateTime.Now;
                 TimeSpan utcOffset = tzi.GetUtcOffset(now);
-                return utcOffset.ToString(@"hh\:mm");
+                return $"{utcOffset.Hours:+00;-00}:{utcOffset.Minutes:00}";
             }
             catch
             {
-                // Default to UTC if unable to parse
-                return "+00:00";
+                return "+00:00"; // Default to UTC if unable to parse
             }
         }
 
@@ -153,29 +168,45 @@ namespace VerbitApiClient
                 SubmitButton.Content = "Creating Job...";
                 ResponseBox.Text = "Sending request...";
 
-                // Validate bearer token is generated
+                // Validate required fields
                 if (string.IsNullOrWhiteSpace(_bearerToken))
                 {
                     ShowError("Please generate a bearer token first");
                     return;
                 }
 
-                if (ProfileBox.SelectedItem == null)
+                if (string.IsNullOrWhiteSpace(JobNameBox.Text))
                 {
-                    ShowError("Profile is required. Please load and select a profile.");
+                    ShowError("Job Name is required");
                     return;
                 }
 
-                if (string.IsNullOrWhiteSpace(VersionBox.Text))
+                if (string.IsNullOrWhiteSpace(ClientTransactionIdBox.Text))
                 {
-                    ShowError("API Version is required");
+                    ShowError("Client Transaction ID is required");
+                    return;
+                }
+
+                if (string.IsNullOrWhiteSpace(ConnectionUrlBox.Text))
+                {
+                    ShowError("Connection URL is required");
+                    return;
+                }
+
+                if (string.IsNullOrWhiteSpace(StartAtBox.Text))
+                {
+                    ShowError("Start At (ISO 8601) is required");
+                    return;
+                }
+
+                if (string.IsNullOrWhiteSpace(MaxDurationBox.Text))
+                {
+                    ShowError("Max Duration is required");
                     return;
                 }
 
                 // Build the API URL
-                string baseUrl = UseSandboxCheckBox.IsChecked == true
-                    ? "https://sandbox-api.verbit.co"
-                    : "https://api.verbit.co";
+                string baseUrl = "https://api.verbit.co";
                 string url = $"{baseUrl}/api/job/new";
 
                 // Build request body
@@ -191,9 +222,20 @@ namespace VerbitApiClient
                 string jsonContent = JsonConvert.SerializeObject(requestBody, Formatting.Indented);
                 request.Content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
 
+                // Log the request
+                var headers = new Dictionary<string, string>
+                {
+                    { "Authorization", $"Bearer {_bearerToken}" },
+                    { "Content-Type", "application/json" }
+                };
+                LogApiRequest("POST", url, jsonContent, headers);
+
                 // Send request
                 var response = await _httpClient.SendAsync(request);
                 string responseContent = await response.Content.ReadAsStringAsync();
+
+                // Log the response
+                LogApiResponse(response.StatusCode, responseContent);
 
                 // Display response
                 DisplayResponse(response.StatusCode, responseContent);
@@ -288,273 +330,92 @@ namespace VerbitApiClient
             }
         }
 
-        private async void LoadProfilesButton_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                // Validate bearer token is generated
-                if (string.IsNullOrWhiteSpace(_bearerToken))
-                {
-                    ShowError("Please generate a bearer token before loading profiles");
-                    return;
-                }
-
-                // Disable button during request
-                LoadProfilesButton.IsEnabled = false;
-                LoadProfilesButton.Content = "Loading...";
-                ProfileBox.Items.Clear();
-
-                // Build the API URL - profiles endpoint is only on production
-                string url = "https://api.verbit.co/api/profiles?v=4";
-
-                // Create HTTP request
-                var request = new HttpRequestMessage(HttpMethod.Get, url);
-
-                // Add authorization header with bearer token
-                request.Headers.Add("Authorization", $"Bearer {_bearerToken}");
-
-                // Send request
-                var response = await _httpClient.SendAsync(request);
-                string responseContent = await response.Content.ReadAsStringAsync();
-
-                if (response.IsSuccessStatusCode)
-                {
-                    // Parse the response
-                    var jsonResponse = JObject.Parse(responseContent);
-                    var profiles = jsonResponse["profiles"]?.ToObject<List<Profile>>();
-
-                    if (profiles != null && profiles.Count > 0)
-                    {
-                        // Populate the ComboBox
-                        foreach (var profile in profiles)
-                        {
-                            ProfileBox.Items.Add(profile);
-                        }
-
-                        // Select the first item by default
-                        ProfileBox.SelectedIndex = 0;
-
-                        ResponseBox.Text = $"Successfully loaded {profiles.Count} profile(s)";
-                    }
-                    else
-                    {
-                        ShowError("No profiles found for this API token");
-                    }
-                }
-                else
-                {
-                    ShowError($"Failed to load profiles: {response.StatusCode}\n{responseContent}");
-                }
-            }
-            catch (Exception ex)
-            {
-                ShowError($"Error loading profiles: {ex.Message}");
-            }
-            finally
-            {
-                // Re-enable button
-                LoadProfilesButton.IsEnabled = true;
-                LoadProfilesButton.Content = "Load Profiles";
-            }
-        }
-
         private Dictionary<string, object> BuildRequestBody()
         {
-            var selectedProfile = ProfileBox.SelectedItem as Profile;
-            var body = new Dictionary<string, object>
+            // Build the request body matching the new API structure:
+            // {
+            //   "name": "...",
+            //   "client_transaction_id": "...",
+            //   "input": {
+            //     "language": "...",
+            //     "type": "...",
+            //     "url_type": "..." (if web_url),
+            //     "schedule": { "start_at": "...", "max_duration": ..., "timezone": "..." },
+            //     "connection_params": { "url": "..." }
+            //   },
+            //   "output": [{ "product": { "type": "...", "tier": "...", "target_languages": [...] } }]
+            // }
+
+            var body = new Dictionary<string, object>();
+
+            // Add basic fields
+            body["name"] = JobNameBox.Text;
+            body["client_transaction_id"] = ClientTransactionIdBox.Text;
+
+            // Build input object
+            var input = new Dictionary<string, object>
             {
-                ["profile"] = selectedProfile?.Name ?? string.Empty,
-                ["v"] = int.Parse(VersionBox.Text)
+                ["language"] = InputLanguageBox.Text,
+                ["type"] = (InputTypeCombo.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "web_url"
             };
 
-            // Add optional string parameters
-            AddIfNotEmpty(body, "job_name", JobNameBox.Text);
-            AddIfNotEmpty(body, "external_id", ExternalIdBox.Text);
-            AddIfNotEmpty(body, "language", LanguageBox.Text);
-            AddIfNotEmpty(body, "customer_id", CustomerIdBox.Text);
-
-            // Add dynamic dictionary (JSON array)
-            if (!string.IsNullOrWhiteSpace(DynamicDictionaryBox.Text))
+            // Add URL type if web_url
+            var inputType = (InputTypeCombo.SelectedItem as ComboBoxItem)?.Content?.ToString();
+            if (inputType == "web_url")
             {
-                try
-                {
-                    var dictionary = JsonConvert.DeserializeObject<List<string>>(DynamicDictionaryBox.Text);
-                    if (dictionary != null && dictionary.Count > 0)
-                    {
-                        body["dynamic_dictionary"] = dictionary;
-                    }
-                }
-                catch
-                {
-                    throw new Exception("Invalid JSON format for Dynamic Dictionary. Expected array of strings.");
-                }
+                input["url_type"] = (UrlTypeCombo.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "zoom";
             }
 
-            // Add permissions (comma-separated to array)
-            if (!string.IsNullOrWhiteSpace(PermissionsBox.Text))
+            // Build schedule object
+            var schedule = new Dictionary<string, object>();
+            if (!string.IsNullOrWhiteSpace(StartAtBox.Text))
             {
-                var permissions = PermissionsBox.Text.Split(',')
-                    .Select(p => p.Trim())
-                    .Where(p => !string.IsNullOrWhiteSpace(p))
-                    .ToList();
-                if (permissions.Count > 0)
-                {
-                    body["permissions"] = permissions;
-                }
+                schedule["start_at"] = StartAtBox.Text;
             }
-
-            // Add labels (comma-separated to array)
-            if (!string.IsNullOrWhiteSpace(LabelsBox.Text))
+            if (!string.IsNullOrWhiteSpace(MaxDurationBox.Text) && int.TryParse(MaxDurationBox.Text, out int maxDurationMinutes))
             {
-                var labels = LabelsBox.Text.Split(',')
-                    .Select(l => l.Trim())
-                    .Where(l => !string.IsNullOrWhiteSpace(l))
-                    .ToList();
-                if (labels.Count > 0)
-                {
-                    body["labels"] = labels;
-                }
+                // Convert minutes to seconds
+                schedule["max_duration"] = maxDurationMinutes * 60;
             }
-
-            // Add job metadata (JSON object)
-            if (!string.IsNullOrWhiteSpace(JobMetadataBox.Text))
+            if (!string.IsNullOrWhiteSpace(TimezoneBox.Text))
             {
-                try
-                {
-                    var metadata = JsonConvert.DeserializeObject<Dictionary<string, object>>(JobMetadataBox.Text);
-                    if (metadata != null && metadata.Count > 0)
-                    {
-                        body["job_metadata"] = metadata;
-                    }
-                }
-                catch
-                {
-                    throw new Exception("Invalid JSON format for Job Metadata. Expected flat JSON object.");
-                }
+                schedule["timezone"] = TimezoneBox.Text;
             }
+            input["schedule"] = schedule;
 
-            // Add translation parameters
-            AddIfNotEmpty(body, "translation_profile", TranslationProfileBox.Text);
-
-            var selectedMode = (TranslationModeCombo.SelectedItem as ComboBoxItem)?.Content?.ToString();
-            if (!string.IsNullOrWhiteSpace(selectedMode))
+            // Build connection params
+            var connectionParams = new Dictionary<string, object>
             {
-                body["translation_processing_mode"] = selectedMode;
-            }
+                ["url"] = ConnectionUrlBox.Text
+            };
+            input["connection_params"] = connectionParams;
 
-            // Add translation languages (comma-separated to array)
-            if (!string.IsNullOrWhiteSpace(TranslationLanguagesBox.Text))
+            body["input"] = input;
+
+            // Build output array with product
+            var product = new Dictionary<string, object>
             {
-                var languages = TranslationLanguagesBox.Text.Split(',')
-                    .Select(l => l.Trim())
-                    .Where(l => !string.IsNullOrWhiteSpace(l))
-                    .ToList();
-                if (languages.Count > 0)
-                {
-                    body["translation_languages"] = languages;
-                }
-            }
+                ["type"] = (ProductTypeCombo.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "captions",
+                ["tier"] = (TierCombo.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "automatic"
+            };
 
-            // Add order details
-            if (!string.IsNullOrWhiteSpace(PoNumberBox.Text) || !string.IsNullOrWhiteSpace(CostCenterBox.Text))
+            // Add target languages
+            var targetLanguages = TargetLanguagesBox.Text.Split(',')
+                .Select(l => l.Trim())
+                .Where(l => !string.IsNullOrWhiteSpace(l))
+                .ToList();
+            product["target_languages"] = targetLanguages;
+
+            var output = new List<Dictionary<string, object>>
             {
-                var orderDetails = new Dictionary<string, string>();
-                if (!string.IsNullOrWhiteSpace(PoNumberBox.Text))
-                {
-                    orderDetails["po_number"] = PoNumberBox.Text;
-                }
-                if (!string.IsNullOrWhiteSpace(CostCenterBox.Text))
-                {
-                    orderDetails["cost_center"] = CostCenterBox.Text;
-                }
-                if (orderDetails.Count > 0)
-                {
-                    body["order_details"] = orderDetails;
-                }
-            }
-
-            // Add schedule
-            if (ScheduleStartDatePicker.SelectedDate.HasValue ||
-                !string.IsNullOrWhiteSpace(ScheduleMaxDurationBox.Text) ||
-                !string.IsNullOrWhiteSpace(ScheduleTimezoneBox.Text) ||
-                ScheduleRecurrenceCheckBox.IsChecked == true)
-            {
-                var schedule = new Dictionary<string, object>();
-
-                if (ScheduleStartDatePicker.SelectedDate.HasValue)
-                {
-                    // Build ISO 8601 datetime from picker values
-                    if (!int.TryParse(ScheduleStartHourBox.Text, out int hour) || hour < 0 || hour > 23)
-                    {
-                        throw new Exception("Start Hour must be a valid hour (0-23)");
-                    }
-                    if (!int.TryParse(ScheduleStartMinuteBox.Text, out int minute) || minute < 0 || minute > 59)
-                    {
-                        throw new Exception("Start Minute must be a valid minute (0-59)");
-                    }
-                    if (!int.TryParse(ScheduleStartSecondBox.Text, out int second) || second < 0 || second > 59)
-                    {
-                        throw new Exception("Start Second must be a valid second (0-59)");
-                    }
-
-                    var selectedDate = ScheduleStartDatePicker.SelectedDate.Value;
-                    var dateTime = new DateTime(selectedDate.Year, selectedDate.Month, selectedDate.Day, hour, minute, second);
-
-                    // Get timezone offset
-                    string timezone = ScheduleTimezoneBox.Text.Trim();
-                    string offset = "+00:00"; // Default to UTC
-
-                    if (!string.IsNullOrWhiteSpace(timezone))
-                    {
-                        offset = GetTimezoneOffset(timezone);
-                    }
-
-                    // Format as ISO 8601 with milliseconds
-                    string isoFormat = dateTime.ToString("yyyy-MM-ddTHH:mm:ss.fff") + offset;
-                    schedule["start_at"] = isoFormat;
-                }
-
-                if (!string.IsNullOrWhiteSpace(ScheduleMaxDurationBox.Text))
-                {
-                    if (int.TryParse(ScheduleMaxDurationBox.Text, out int maxDurationMinutes))
-                    {
-                        // Convert minutes to seconds
-                        schedule["max_duration"] = maxDurationMinutes * 60;
-                    }
-                    else
-                    {
-                        throw new Exception("Max Duration must be a valid number (minutes).");
-                    }
-                }
-
-                if (!string.IsNullOrWhiteSpace(ScheduleTimezoneBox.Text))
-                {
-                    schedule["timezone"] = ScheduleTimezoneBox.Text;
-                }
-
-                if (ScheduleRecurrenceCheckBox.IsChecked == true)
-                {
-                    schedule["recurrence"] = true;
-                }
-
-                if (schedule.Count > 0)
-                {
-                    body["schedule"] = schedule;
-                }
-            }
+                new Dictionary<string, object> { ["product"] = product }
+            };
+            body["output"] = output;
 
             return body;
         }
 
-        private void AddIfNotEmpty(Dictionary<string, object> dictionary, string key, string value)
-        {
-            if (!string.IsNullOrWhiteSpace(value))
-            {
-                dictionary[key] = value;
-            }
-        }
-
-        private void DisplayResponse(System.Net.HttpStatusCode statusCode, string content)
+                private void DisplayResponse(System.Net.HttpStatusCode statusCode, string content)
         {
             StringBuilder sb = new StringBuilder();
             sb.AppendLine($"Status Code: {(int)statusCode} {statusCode}");
@@ -602,6 +463,67 @@ namespace VerbitApiClient
             MessageBox.Show(message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
 
+        private void AddLog(string message)
+        {
+            _logBuilder.AppendLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] {message}");
+            LoggingBox.Text = _logBuilder.ToString();
+            LoggingBox.ScrollToEnd();
+        }
+
+        private void LogApiRequest(string method, string url, string requestBody, Dictionary<string, string>? headers = null)
+        {
+            AddLog("=== API REQUEST ===");
+            AddLog($"Method: {method}");
+            AddLog($"URL: {url}");
+            
+            if (headers != null && headers.Count > 0)
+            {
+                AddLog("Headers:");
+                foreach (var header in headers)
+                {
+                    if (header.Key.Equals("Authorization", StringComparison.OrdinalIgnoreCase))
+                    {
+                        AddLog($"  {header.Key}: Bearer [REDACTED]");
+                    }
+                    else
+                    {
+                        AddLog($"  {header.Key}: {header.Value}");
+                    }
+                }
+            }
+            
+            AddLog("Request Body:");
+            try
+            {
+                var jsonObject = JToken.Parse(requestBody);
+                AddLog(jsonObject.ToString(Formatting.Indented));
+            }
+            catch
+            {
+                AddLog(requestBody);
+            }
+            AddLog("");
+        }
+
+        private void LogApiResponse(System.Net.HttpStatusCode statusCode, string responseContent)
+        {
+            AddLog("=== API RESPONSE ===");
+            AddLog($"Status Code: {(int)statusCode} {statusCode}");
+            
+            try
+            {
+                var jsonObject = JToken.Parse(responseContent);
+                AddLog("Response Body:");
+                AddLog(jsonObject.ToString(Formatting.Indented));
+            }
+            catch
+            {
+                AddLog("Response Body:");
+                AddLog(responseContent);
+            }
+            AddLog("");
+        }
+
         private void ClearButton_Click(object sender, RoutedEventArgs e)
         {
             // Clear all input fields
@@ -609,32 +531,28 @@ namespace VerbitApiClient
             _bearerToken = string.Empty;
             TokenStatusLabel.Text = "No bearer token generated";
             TokenStatusLabel.Foreground = System.Windows.Media.Brushes.Gray;
-            CustomerIdBox.Clear();
-            ProfileBox.Items.Clear();
-            ProfileBox.SelectedIndex = -1;
-            VersionBox.Text = "4";
+            
             JobNameBox.Clear();
-            ExternalIdBox.Clear();
-            LanguageBox.Clear();
-            DynamicDictionaryBox.Clear();
-            PermissionsBox.Clear();
-            LabelsBox.Clear();
-            JobMetadataBox.Clear();
-            TranslationProfileBox.Clear();
-            TranslationModeCombo.SelectedIndex = 0;
-            TranslationLanguagesBox.Clear();
-            PoNumberBox.Clear();
-            CostCenterBox.Clear();
-            ScheduleStartDatePicker.SelectedDate = null;
-            ScheduleStartHourBox.Text = "00";
-            ScheduleStartMinuteBox.Text = "00";
-            ScheduleStartSecondBox.Text = "00";
-            ScheduleMaxDurationBox.Clear();
-            ScheduleTimezoneBox.Clear();
-            ScheduleRecurrenceCheckBox.IsChecked = false;
-            ScheduleStartAtPreviewLabel.Text = "Preview: (not set)";
+            ClientTransactionIdBox.Clear();
+            InputTypeCombo.SelectedIndex = 0;
+            UrlTypeCombo.SelectedIndex = 0;
+            ConnectionUrlBox.Clear();
+            InputLanguageBox.Text = "en-US";
+            StartDatePicker.SelectedDate = null;
+            StartHourBox.Text = "12";
+            StartMinuteBox.Text = "00";
+            StartSecondBox.Text = "00";
+            StartAtBox.Clear();
+            StartAtPreviewLabel.Text = "Preview: (not set)";
+            TimezoneBox.Text = "America/Los_Angeles";
+            MaxDurationBox.Text = "15";
+            ProductTypeCombo.SelectedIndex = 0;
+            TierCombo.SelectedIndex = 0;
+            TargetLanguagesBox.Text = "en-US";
+            
             ResponseBox.Clear();
-            UseSandboxCheckBox.IsChecked = false;
+            LoggingBox.Clear();
+            _logBuilder.Clear();
         }
 
         private string GetPasswordBoxText(PasswordBox passwordBox)
@@ -647,6 +565,13 @@ namespace VerbitApiClient
         {
             // Already on this page, do nothing or refresh
             MessageBox.Show("You are already on the Create New Job page.", "Information", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+
+        private void CreateOrderMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            // Open the Create Order window
+            var createOrderWindow = new CreateOrderWindow();
+            createOrderWindow.Show();
         }
 
         private void ConnectionPlanMenuItem_Click(object sender, RoutedEventArgs e)

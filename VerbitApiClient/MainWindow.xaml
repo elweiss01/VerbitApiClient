@@ -12,6 +12,11 @@
                         <TextBlock Text="📝" FontSize="14"/>
                     </MenuItem.Icon>
                 </MenuItem>
+                <MenuItem Header="Create Order (RTMP)" Click="CreateOrderMenuItem_Click">
+                    <MenuItem.Icon>
+                        <TextBlock Text="📺" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
                 <MenuItem Header="Update Connection Plan" Click="ConnectionPlanMenuItem_Click">
                     <MenuItem.Icon>
                         <TextBlock Text="🔄" FontSize="14"/>
@@ -42,7 +47,7 @@
 
             <!-- Header -->
         <StackPanel Grid.Row="0" Margin="0,0,0,20">
-            <TextBlock Text="Verbit API - Create New Job" FontSize="24" FontWeight="Bold" Margin="0,0,0,10"/>
+            <TextBlock Text="Verbit API - Create Live Transcription Job" FontSize="24" FontWeight="Bold" Margin="0,0,0,10"/>
             <TextBlock Text="POST /api/job/new" FontSize="14" Foreground="Gray"/>
         </StackPanel>
 
@@ -52,8 +57,6 @@
                 <!-- API Configuration -->
                 <GroupBox Header="API Configuration" Margin="0,0,0,15">
                     <StackPanel Margin="10">
-                        <CheckBox x:Name="UseSandboxCheckBox" Content="Use Sandbox Environment" Margin="0,0,0,10"/>
-
                         <TextBlock Text="API Token *" FontWeight="Bold" Margin="0,0,0,5"/>
                         <PasswordBox x:Name="ApiTokenBox" Height="30" Margin="0,0,0,10"/>
 
@@ -65,131 +68,113 @@
                             <Button x:Name="GenerateBearerTokenButton" Content="Generate Bearer Token" Height="30" Grid.Column="0" Width="180" Click="GenerateBearerTokenButton_Click" Margin="0,0,10,0"/>
                             <TextBlock x:Name="TokenStatusLabel" Text="No bearer token generated" Grid.Column="1" VerticalAlignment="Center" Foreground="Gray" FontStyle="Italic"/>
                         </Grid>
-
-                        <TextBlock Text="Customer ID (for OAuth)" FontWeight="Bold" Margin="0,0,0,5"/>
-                        <TextBox x:Name="CustomerIdBox" Height="30" Margin="0,0,0,10"/>
                     </StackPanel>
                 </GroupBox>
 
-                <!-- Required Parameters -->
-                <GroupBox Header="Required Parameters" Margin="0,0,0,15">
+                <!-- Job Details -->
+                <GroupBox Header="Job Details" Margin="0,0,0,15">
                     <StackPanel Margin="10">
-                        <TextBlock Text="Profile *" FontWeight="Bold" Margin="0,0,0,5"/>
-                        <Grid Margin="0,0,0,15">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <ComboBox x:Name="ProfileBox" Height="30" Grid.Column="0" Margin="0,0,10,0" IsEditable="False"/>
-                            <Button x:Name="LoadProfilesButton" Content="Load Profiles" Height="30" Grid.Column="1" Width="120" Click="LoadProfilesButton_Click"/>
-                        </Grid>
+                        <TextBlock Text="Job Name *" FontWeight="Bold" Margin="0,0,0,5"/>
+                        <TextBox x:Name="JobNameBox" Height="30" Margin="0,0,0,15" Text="My Live Transcription"/>
 
-                        <TextBlock Text="API Version *" FontWeight="Bold" Margin="0,0,0,5"/>
-                        <TextBox x:Name="VersionBox" Text="4" Height="30" Margin="0,0,0,10"/>
+                        <TextBlock Text="Client Transaction ID *" FontWeight="Bold" Margin="0,0,0,5"/>
+                        <TextBox x:Name="ClientTransactionIdBox" Height="30" Margin="0,0,0,10" Text=""/>
                     </StackPanel>
                 </GroupBox>
 
-                <!-- Schedule Parameters -->
-                <GroupBox Header="Schedule (Optional)" Margin="0,0,0,15">
+                <!-- Input Configuration -->
+                <GroupBox Header="Input Configuration" Margin="0,0,0,15">
                     <StackPanel Margin="10">
-                        <TextBlock Text="Start At" FontWeight="Bold" Margin="0,0,0,5"/>
-                        <TextBlock Text="Select date and time (ISO 8601 format will be automatically generated)" FontSize="11" Foreground="Gray" Margin="0,0,0,5"/>
-                        
-                        <Grid Margin="0,0,0,10">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-                            
-                            <StackPanel Grid.Column="0" Margin="0,0,10,0">
-                                <TextBlock Text="Date:" FontSize="11" Margin="0,0,0,3"/>
-                                <DatePicker x:Name="ScheduleStartDatePicker" Height="30"/>
-                            </StackPanel>
-                            
-                            <StackPanel Grid.Column="2" Margin="10,0,0,0">
-                                <TextBlock Text="Time:" FontSize="11" Margin="0,0,0,3"/>
-                                <Grid Height="30">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <TextBox x:Name="ScheduleStartHourBox" Height="30" Grid.Column="0" Text="00" TextAlignment="Center"/>
-                                    <TextBlock Text=":" Grid.Column="1" VerticalAlignment="Center" Margin="5,0,5,0"/>
-                                    <TextBox x:Name="ScheduleStartMinuteBox" Height="30" Grid.Column="2" Text="00" TextAlignment="Center"/>
-                                    <TextBlock Text=":" Grid.Column="3" VerticalAlignment="Center" Margin="5,0,5,0"/>
-                                    <TextBox x:Name="ScheduleStartSecondBox" Height="30" Grid.Column="4" Text="00" TextAlignment="Center"/>
-                                </Grid>
-                            </StackPanel>
-                        </Grid>
-                        
-                        <TextBlock x:Name="ScheduleStartAtPreviewLabel" Text="Preview: (not set)" FontSize="10" Foreground="Gray" Margin="0,0,0,15"/>
-
-                        <TextBlock Text="Max Duration (minutes)" FontWeight="Bold" Margin="0,0,0,5"/>
-                        <TextBox x:Name="ScheduleMaxDurationBox" Height="30" Margin="0,0,0,15"/>
-
-                        <TextBlock Text="Timezone (e.g., EST, UTC, Europe/London)" FontWeight="Bold" Margin="0,0,0,5"/>
-                        <TextBox x:Name="ScheduleTimezoneBox" Height="30" Margin="0,0,0,15"/>
-
-                        <CheckBox x:Name="ScheduleRecurrenceCheckBox" Content="Recurrence" Margin="0,0,0,10"/>
-                    </StackPanel>
-                </GroupBox>
-
-                <!-- Optional Parameters -->
-                <GroupBox Header="Optional Parameters" Margin="0,0,0,15">
-                    <StackPanel Margin="10">
-                        <TextBlock Text="Job Name" FontWeight="Bold" Margin="0,0,0,5"/>
-                        <TextBox x:Name="JobNameBox" Height="30" Margin="0,0,0,15"/>
-
-                        <TextBlock Text="External ID" FontWeight="Bold" Margin="0,0,0,5"/>
-                        <TextBox x:Name="ExternalIdBox" Height="30" Margin="0,0,0,15"/>
-
-                        <TextBlock Text="Language (e.g., en-US)" FontWeight="Bold" Margin="0,0,0,5"/>
-                        <TextBox x:Name="LanguageBox" Height="30" Margin="0,0,0,15"/>
-
-                        <TextBlock Text="Dynamic Dictionary (JSON array of strings)" FontWeight="Bold" Margin="0,0,0,5"/>
-                        <TextBox x:Name="DynamicDictionaryBox" Height="60" TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" Margin="0,0,0,15"/>
-
-                        <TextBlock Text="Permissions (comma-separated)" FontWeight="Bold" Margin="0,0,0,5"/>
-                        <TextBox x:Name="PermissionsBox" Height="30" Margin="0,0,0,15"/>
-
-                        <TextBlock Text="Labels (comma-separated)" FontWeight="Bold" Margin="0,0,0,5"/>
-                        <TextBox x:Name="LabelsBox" Height="30" Margin="0,0,0,15"/>
-
-                        <TextBlock Text="Job Metadata (JSON object)" FontWeight="Bold" Margin="0,0,0,5"/>
-                        <TextBox x:Name="JobMetadataBox" Height="80" TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" Margin="0,0,0,10"/>
-                    </StackPanel>
-                </GroupBox>
-
-                <!-- Translation Parameters -->
-                <GroupBox Header="Translation Parameters (Optional)" Margin="0,0,0,15">
-                    <StackPanel Margin="10">
-                        <TextBlock Text="Translation Profile" FontWeight="Bold" Margin="0,0,0,5"/>
-                        <TextBox x:Name="TranslationProfileBox" Height="30" Margin="0,0,0,15"/>
-
-                        <TextBlock Text="Translation Processing Mode" FontWeight="Bold" Margin="0,0,0,5"/>
-                        <ComboBox x:Name="TranslationModeCombo" Height="30" Margin="0,0,0,15">
-                            <ComboBoxItem Content="" IsSelected="True"/>
-                            <ComboBoxItem Content="standard"/>
-                            <ComboBoxItem Content="rush"/>
+                        <TextBlock Text="Input Type *" FontWeight="Bold" Margin="0,0,0,5"/>
+                        <ComboBox x:Name="InputTypeCombo" Height="30" Margin="0,0,0,15" SelectionChanged="InputTypeCombo_SelectionChanged">
+                            <ComboBoxItem Content="web_url" IsSelected="True"/>
+                            <ComboBoxItem Content="phone_dial_in"/>
+                            <ComboBoxItem Content="rtmp_pull"/>
+                            <ComboBoxItem Content="rtmp_push"/>
                         </ComboBox>
 
-                        <TextBlock Text="Translation Languages (comma-separated, e.g., es-ES,fr-FR)" FontWeight="Bold" Margin="0,0,0,5"/>
-                        <TextBox x:Name="TranslationLanguagesBox" Height="30" Margin="0,0,0,10"/>
+                        <TextBlock Text="URL Type (if web_url) *" FontWeight="Bold" Margin="0,0,0,5"/>
+                        <ComboBox x:Name="UrlTypeCombo" Height="30" Margin="0,0,0,15">
+                            <ComboBoxItem Content="zoom" IsSelected="True"/>
+                            <ComboBoxItem Content="teams"/>
+                            <ComboBoxItem Content="google_meet"/>
+                            <ComboBoxItem Content="generic_url"/>
+                        </ComboBox>
+
+                        <TextBlock Text="Connection URL *" FontWeight="Bold" Margin="0,0,0,5"/>
+                        <TextBox x:Name="ConnectionUrlBox" Height="30" Margin="0,0,0,15" Text=""/>
+
+                        <TextBlock Text="Input Language *" FontWeight="Bold" Margin="0,0,0,5"/>
+                        <TextBox x:Name="InputLanguageBox" Height="30" Margin="0,0,0,15" Text="en-US"/>
                     </StackPanel>
                 </GroupBox>
 
-                <!-- Order Details -->
-                <GroupBox Header="Order Details (Optional)" Margin="0,0,0,15">
+                <!-- Schedule Configuration -->
+                <GroupBox Header="Schedule Configuration" Margin="0,0,0,15">
                     <StackPanel Margin="10">
-                        <TextBlock Text="PO Number" FontWeight="Bold" Margin="0,0,0,5"/>
-                        <TextBox x:Name="PoNumberBox" Height="30" Margin="0,0,0,15"/>
+                        <TextBlock Text="Start Date and Time *" FontWeight="Bold" Margin="0,0,0,5"/>
+                        
+                        <Grid Margin="0,0,0,15">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" SharedSizeGroup="Label"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto" SharedSizeGroup="Label"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            
+                            <!-- Date Picker -->
+                            <TextBlock Text="Date:" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <DatePicker x:Name="StartDatePicker" Grid.Column="1" Height="30" SelectedDateChanged="StartDateTime_Changed"/>
+                            
+                            <!-- Hour -->
+                            <TextBlock Text="Hour:" FontWeight="Bold" Grid.Row="0" Grid.Column="2" VerticalAlignment="Center" Margin="10,0,10,0"/>
+                            <TextBox x:Name="StartHourBox" Grid.Row="0" Grid.Column="3" Height="30" Text="12" TextChanged="StartDateTime_Changed"/>
+                            
+                            <!-- Minute -->
+                            <TextBlock Text="Minute:" FontWeight="Bold" Grid.Row="1" Grid.Column="2" VerticalAlignment="Center" Margin="10,5,10,0"/>
+                            <TextBox x:Name="StartMinuteBox" Grid.Row="1" Grid.Column="3" Height="30" Text="00" Margin="0,5,0,0" TextChanged="StartDateTime_Changed"/>
+                            
+                            <!-- Second -->
+                            <TextBlock Text="Second:" FontWeight="Bold" Grid.Row="2" Grid.Column="2" VerticalAlignment="Center" Margin="10,5,10,0"/>
+                            <TextBox x:Name="StartSecondBox" Grid.Row="2" Grid.Column="3" Height="30" Text="00" Margin="0,5,0,0" TextChanged="StartDateTime_Changed"/>
+                        </Grid>
+                        
+                        <TextBlock Text="Formatted ISO 8601:" FontWeight="Bold" Margin="0,0,0,5"/>
+                        <TextBlock x:Name="StartAtPreviewLabel" Text="Preview: (not set)" FontSize="11" Foreground="DarkBlue" Margin="0,0,0,15" TextWrapping="Wrap"/>
+                        <TextBox x:Name="StartAtBox" Height="30" Margin="0,0,0,15" Text="" IsReadOnly="True" Background="WhiteSmoke"/>
 
-                        <TextBlock Text="Cost Center" FontWeight="Bold" Margin="0,0,0,5"/>
-                        <TextBox x:Name="CostCenterBox" Height="30" Margin="0,0,0,10"/>
+                        <TextBlock Text="Timezone *" FontWeight="Bold" Margin="0,0,0,5"/>
+                        <TextBox x:Name="TimezoneBox" Height="30" Margin="0,0,0,15" Text="America/Los_Angeles"/>
+
+                        <TextBlock Text="Max Duration (minutes) *" FontWeight="Bold" Margin="0,0,0,5"/>
+                        <TextBox x:Name="MaxDurationBox" Height="30" Margin="0,0,0,10" Text="15"/>
+                    </StackPanel>
+                </GroupBox>
+
+                <!-- Output Configuration -->
+                <GroupBox Header="Output Configuration" Margin="0,0,0,15">
+                    <StackPanel Margin="10">
+                        <TextBlock Text="Product Type *" FontWeight="Bold" Margin="0,0,0,5"/>
+                        <ComboBox x:Name="ProductTypeCombo" Height="30" Margin="0,0,0,15">
+                            <ComboBoxItem Content="captions" IsSelected="True"/>
+                            <ComboBoxItem Content="translation"/>
+                            <ComboBoxItem Content="interpretation"/>
+                        </ComboBox>
+
+                        <TextBlock Text="Tier *" FontWeight="Bold" Margin="0,0,0,5"/>
+                        <ComboBox x:Name="TierCombo" Height="30" Margin="0,0,0,15">
+                            <ComboBoxItem Content="automatic" IsSelected="True"/>
+                            <ComboBoxItem Content="human"/>
+                            <ComboBoxItem Content="hybrid"/>
+                        </ComboBox>
+
+                        <TextBlock Text="Target Languages (comma-separated) *" FontWeight="Bold" Margin="0,0,0,5"/>
+                        <TextBox x:Name="TargetLanguagesBox" Height="30" Margin="0,0,0,10" Text="en-US"/>
                     </StackPanel>
                 </GroupBox>
             </StackPanel>
@@ -201,12 +186,23 @@
             <Button x:Name="SubmitButton" Content="Create Job" Width="120" Height="35" Background="#007ACC" Foreground="White" FontWeight="Bold" Click="SubmitButton_Click"/>
         </StackPanel>
 
-        <!-- Response Area -->
-        <GroupBox Grid.Row="3" Header="Response" Margin="0,0,0,0">
-            <Grid>
-                <TextBox x:Name="ResponseBox" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" FontFamily="Consolas" FontSize="12" Padding="10"/>
-            </Grid>
-        </GroupBox>
+        <!-- Response and Logging Area -->
+        <TabControl Grid.Row="3" Margin="0,0,0,0">
+            <TabItem Header="Response">
+                <GroupBox Header="Response" Margin="0,0,0,0">
+                    <Grid>
+                        <TextBox x:Name="ResponseBox" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" FontFamily="Consolas" FontSize="12" Padding="10"/>
+                    </Grid>
+                </GroupBox>
+            </TabItem>
+            <TabItem Header="Logging">
+                <GroupBox Header="Request and Response Logging" Margin="0,0,0,0">
+                    <Grid>
+                        <TextBox x:Name="LoggingBox" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" FontFamily="Consolas" FontSize="12" Padding="10"/>
+                    </Grid>
+                </GroupBox>
+            </TabItem>
+        </TabControl>
         </Grid>
     </DockPanel>
 </Window>
