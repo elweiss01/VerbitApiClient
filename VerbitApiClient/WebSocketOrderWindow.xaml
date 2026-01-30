@@ -104,11 +104,11 @@
 
                             <StackPanel Margin="0,10,0,0">
                                 <TextBlock Text="Language *" FontWeight="Bold"/>
-                                <TextBox x:Name="InputLanguageBox" Height="38" Padding="8" Text="en-US" VerticalContentAlignment="Center"/>
+                                <TextBox x:Name="InputLanguageBox" Height="44" Padding="8" Text="en-US" VerticalContentAlignment="Center"/>
                             </StackPanel>
 
                             <StackPanel Margin="0,10,0,0">
-                                <TextBlock Text="Facility ID *" FontWeight="Bold"/>
+                                <TextBlock Text="Facility ID" FontWeight="Bold"/>
                                 <TextBox x:Name="FacilityIdBox" Height="38" Padding="8" VerticalContentAlignment="Center"/>
                             </StackPanel>
                         </StackPanel>

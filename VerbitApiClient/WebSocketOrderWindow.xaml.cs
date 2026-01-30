@@ -247,7 +247,7 @@ namespace VerbitApiClient
             // Target Languages
             var langStack = new StackPanel { Margin = new Thickness(0, 8, 0, 0) };
             langStack.Children.Add(new TextBlock { Text = "Target Languages (comma-separated) *", FontWeight = FontWeights.Bold });
-            var langBox = new TextBox { Height = 30, Padding = new Thickness(8), Text = "en-US" };
+            var langBox = new TextBox { Height = 44, Padding = new Thickness(8), Text = "en-US" };
             langStack.Children.Add(langBox);
             innerStack.Children.Add(langStack);
 
@@ -369,12 +369,17 @@ namespace VerbitApiClient
                     ["max_duration"] = int.Parse(MaxDurationBox.Text) * 60, // Convert minutes to seconds
                     ["timezone"] = TimezoneBox.Text
                 },
-                ["connection_plan"] = new Dictionary<string, object>
-                {
-                    ["facility_id"] = int.Parse(FacilityIdBox.Text)
-                }
             };
             body["input"] = input;
+            // Add connection_plan only if Facility ID is provided
+            if (!string.IsNullOrWhiteSpace(FacilityIdBox.Text) && int.TryParse(FacilityIdBox.Text, out int facilityId))
+            {
+                input["connection_plan"] = new Dictionary<string, object>
+                {
+                    ["facility_id"] = facilityId
+                };
+            }
+
 
             // Output products
             var output = new List<Dictionary<string, object>>();
