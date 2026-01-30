@@ -79,6 +79,16 @@
 
                         <TextBlock Text="Client Transaction ID *" FontWeight="Bold" Margin="0,0,0,5"/>
                         <TextBox x:Name="ClientTransactionIdBox" Height="30" Margin="0,0,0,10" Text=""/>
+                        
+                        <Grid Margin="0,0,0,5">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <ComboBox x:Name="ProfilesCombo" Height="30" Grid.Column="0" Margin="0,0,10,0"/>
+                            <Button x:Name="LoadProfilesButton" Content="Load Profiles" Grid.Column="1" Height="30" Click="LoadProfilesButton_Click" />
+                        </Grid>
+                        <ProgressBar x:Name="ProfilesLoadingBar" Height="6" IsIndeterminate="True" Visibility="Collapsed" Margin="0,2,0,10" />
                     </StackPanel>
                 </GroupBox>
 
@@ -203,6 +213,18 @@
                 </GroupBox>
             </TabItem>
         </TabControl>
+        <!-- Spinner overlay (appears above all content when visible) -->
+        <Grid x:Name="SpinnerOverlay" Grid.RowSpan="4" Visibility="Collapsed" Background="#80000000">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <Border HorizontalAlignment="Center" VerticalAlignment="Center" Background="#AAFFFFFF" Padding="20" Width="260" Height="100" CornerRadius="6">
+                <StackPanel Orientation="Vertical">
+                    <ProgressBar IsIndeterminate="True" Height="18" Margin="0,0,0,10"/>
+                    <TextBlock Text="Loading profiles..." HorizontalAlignment="Center" FontWeight="Bold" Foreground="#222"/>
+                </StackPanel>
+            </Border>
+        </Grid>
         </Grid>
     </DockPanel>
 </Window>

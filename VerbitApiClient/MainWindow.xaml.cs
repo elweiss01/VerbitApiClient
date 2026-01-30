@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Net.Http;
 using System.Text;
 using System.Windows;
@@ -20,6 +21,75 @@ namespace VerbitApiClient
         {
             InitializeComponent();
             _httpClient = new HttpClient();
+        }
+
+        private async Task LoadProfilesAsync()
+        {
+            SpinnerOverlay.Visibility = Visibility.Visible;
+            ProfilesLoadingBar.Visibility = Visibility.Visible;
+            LoadProfilesButton.IsEnabled = false;
+            LoadProfilesButton.Content = "Loading...";
+            ProfilesCombo.Items.Clear();
+
+            try
+            {
+                if (string.IsNullOrWhiteSpace(_bearerToken))
+                {
+                    ShowError("Please generate a bearer token before loading profiles");
+                    return;
+                }
+
+                string url = "https://api.verbit.co/api/profiles?v=4";
+                var request = new HttpRequestMessage(HttpMethod.Get, url);
+                request.Headers.Add("Authorization", $"Bearer {_bearerToken}");
+
+                var response = await _httpClient.SendAsync(request);
+                string responseContent = await response.Content.ReadAsStringAsync();
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var json = JToken.Parse(responseContent);
+                    var profiles = json["profiles"]?
+                        .Select(p => p["name"]?.ToString())
+                        .Where(n => !string.IsNullOrWhiteSpace(n))
+                        .Select(n => n!)
+                        .ToList() ?? new List<string>();
+
+                    if (profiles != null && profiles.Count > 0)
+                    {
+                        foreach (var name in profiles)
+                        {
+                            ProfilesCombo.Items.Add(name);
+                        }
+                        ProfilesCombo.SelectedIndex = 0;
+                        ResponseBox.Text = $"Loaded {profiles.Count} profile(s).";
+                    }
+                    else
+                    {
+                        ShowError("No profiles returned by API.");
+                    }
+                }
+                else
+                {
+                    ShowError($"Failed to load profiles: {response.StatusCode}\n{responseContent}");
+                }
+            }
+            catch (Exception ex)
+            {
+                ShowError($"Error loading profiles: {ex.Message}");
+            }
+            finally
+            {
+                SpinnerOverlay.Visibility = Visibility.Collapsed;
+                ProfilesLoadingBar.Visibility = Visibility.Collapsed;
+                LoadProfilesButton.IsEnabled = true;
+                LoadProfilesButton.Content = "Load Profiles";
+            }
+        }
+
+        private async void LoadProfilesButton_Click(object sender, RoutedEventArgs e)
+        {
+            await LoadProfilesAsync();
         }
 
         private void InputTypeCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -301,6 +371,15 @@ namespace VerbitApiClient
                         TokenStatusLabel.Text = "Bearer token generated successfully (valid for 24 hours)";
                         TokenStatusLabel.Foreground = System.Windows.Media.Brushes.Green;
                         ResponseBox.Text = "Bearer token generated successfully! You can now use the API features.";
+                        // Auto-load profiles now that we have a bearer token
+                        try
+                        {
+                            await LoadProfilesAsync();
+                        }
+                        catch
+                        {
+                            // ignore errors during auto-load
+                        }
                     }
                     else
                     {
@@ -351,12 +430,23 @@ namespace VerbitApiClient
             // Add basic fields
             body["name"] = JobNameBox.Text;
             body["client_transaction_id"] = ClientTransactionIdBox.Text;
+            // Add selected profile name(s) if available
+            if (ProfilesCombo != null && ProfilesCombo.SelectedItem != null)
+            {
+                var sel = ProfilesCombo.SelectedItem.ToString();
+                if (!string.IsNullOrWhiteSpace(sel))
+                {
+                    // single profile value (string) under key "profile"
+                    body["profile"] = sel;
+                }
+            }
 
             // Build input object
             var input = new Dictionary<string, object>
             {
                 ["language"] = InputLanguageBox.Text,
-                ["type"] = (InputTypeCombo.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "web_url"
+                ["type"] = (InputTypeCombo.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "web_url",
+                ["service_type"] = "live"
             };
 
             // Add URL type if web_url
@@ -396,7 +486,8 @@ namespace VerbitApiClient
             var product = new Dictionary<string, object>
             {
                 ["type"] = (ProductTypeCombo.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "captions",
-                ["tier"] = (TierCombo.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "automatic"
+                ["tier"] = (TierCombo.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "automatic",
+                ["service_type"] = "live"
             };
 
             // Add target languages
@@ -549,6 +640,9 @@ namespace VerbitApiClient
             ProductTypeCombo.SelectedIndex = 0;
             TierCombo.SelectedIndex = 0;
             TargetLanguagesBox.Text = "en-US";
+            ProfilesCombo.Items.Clear();
+            ProfilesCombo.SelectedIndex = -1;
+            SpinnerOverlay.Visibility = Visibility.Collapsed;
             
             ResponseBox.Clear();
             LoggingBox.Clear();
