@@ -50,7 +50,7 @@ class TestJob
                 {
                     name = $"Test Job {DateTime.Now:HHmmss}",
                     client_transaction_id = Guid.NewGuid().ToString(),
-                    profile = selectedProfile,
+                    //profile = selectedProfile,
                     input = new
                     {
                         language = "en-US",
@@ -76,11 +76,26 @@ class TestJob
                             {
                                 type = "captions",
                                 tier = "automatic",
-                                service_type = "live",
-                                target_languages = new[] { "en-US" }
+                                target_languages = new[] { "en-US" },
+                                service_type = "live"
+                            }
+                        },
+
+                        new 
+                        {
+                            delivery = new
+                            {
+                                type = "zoom",
+                                language = "en-US",
+                                connection_params = new
+                                {
+                                   url = "https://zoom.us/meeting/123456789"
+                                }
                             }
                         }
                     }
+
+                      
                 };
                 
                 var jobRequest = new HttpRequestMessage(HttpMethod.Post, jobUrl);

@@ -655,24 +655,11 @@ namespace VerbitApiClient
         }
 
         // Menu item event handlers
-        private void CreateJobMenuItem_Click(object sender, RoutedEventArgs e)
+        private void WebSocketOrderMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            // Already on this page, do nothing or refresh
-            MessageBox.Show("You are already on the Create New Job page.", "Information", MessageBoxButton.OK, MessageBoxImage.Information);
-        }
-
-        private void CreateOrderMenuItem_Click(object sender, RoutedEventArgs e)
-        {
-            // Open the Create Order window
-            var createOrderWindow = new CreateOrderWindow();
-            createOrderWindow.Show();
-        }
-
-        private void ConnectionPlanMenuItem_Click(object sender, RoutedEventArgs e)
-        {
-            // Open the Connection Plan window
-            var connectionPlanWindow = new ConnectionPlanWindow();
-            connectionPlanWindow.Show();
+            // Open the WebSocket Order window
+            var webSocketOrderWindow = new WebSocketOrderWindow();
+            webSocketOrderWindow.Show();
         }
 
         private void DocumentationMenuItem_Click(object sender, RoutedEventArgs e)

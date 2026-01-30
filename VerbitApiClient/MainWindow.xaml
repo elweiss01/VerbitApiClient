@@ -7,19 +7,9 @@
         <!-- Menu Bar -->
         <Menu DockPanel.Dock="Top" Background="#F5F5F5">
             <MenuItem Header="API Features">
-                <MenuItem Header="Create New Job" Click="CreateJobMenuItem_Click">
+                <MenuItem Header="WebSocket Order" Click="WebSocketOrderMenuItem_Click">
                     <MenuItem.Icon>
-                        <TextBlock Text="📝" FontSize="14"/>
-                    </MenuItem.Icon>
-                </MenuItem>
-                <MenuItem Header="Create Order (RTMP)" Click="CreateOrderMenuItem_Click">
-                    <MenuItem.Icon>
-                        <TextBlock Text="📺" FontSize="14"/>
-                    </MenuItem.Icon>
-                </MenuItem>
-                <MenuItem Header="Update Connection Plan" Click="ConnectionPlanMenuItem_Click">
-                    <MenuItem.Icon>
-                        <TextBlock Text="🔄" FontSize="14"/>
+                        <TextBlock Text="🔌" FontSize="14"/>
                     </MenuItem.Icon>
                 </MenuItem>
             </MenuItem>
@@ -179,8 +169,8 @@
                         <TextBlock Text="Tier *" FontWeight="Bold" Margin="0,0,0,5"/>
                         <ComboBox x:Name="TierCombo" Height="30" Margin="0,0,0,15">
                             <ComboBoxItem Content="automatic" IsSelected="True"/>
-                            <ComboBoxItem Content="human"/>
-                            <ComboBoxItem Content="hybrid"/>
+                            <ComboBoxItem Content="professional"/>
+                            <ComboBoxItem Content="elite"/>
                         </ComboBox>
 
                         <TextBlock Text="Target Languages (comma-separated) *" FontWeight="Bold" Margin="0,0,0,5"/>

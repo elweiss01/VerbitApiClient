@@ -1,0 +1,261 @@
+<Window x:Class="VerbitApiClient.WebSocketOrderWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="WebSocket Order - Create New Order" Height="900" Width="1000"
+        WindowStartupLocation="CenterScreen">
+    <DockPanel>
+        <!-- Response/Logging Box at bottom with tabs (MUST be docked first so it stays visible) -->
+        <Grid DockPanel.Dock="Bottom" Background="White" Height="200">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!-- Tab Headers -->
+            <Border Grid.Row="0" BorderBrush="#CCCCCC" BorderThickness="0,1,0,1" Background="#F5F5F5">
+                <StackPanel Orientation="Horizontal">
+                    <Button x:Name="ResponseTabButton" Content="Response" Background="#007ACC" Foreground="White" Padding="15,8" Click="ResponseTab_Click" Cursor="Hand"/>
+                    <Button x:Name="LoggingTabButton" Content="Logging" Background="#E0E0E0" Foreground="Black" Padding="15,8" Click="LoggingTab_Click" Cursor="Hand"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Tab Content -->
+            <Border Grid.Row="1" BorderBrush="#CCCCCC" BorderThickness="0,0,0,0" Padding="15">
+                <StackPanel>
+                    <!-- Response Tab -->
+                    <StackPanel x:Name="ResponseTabContent">
+                        <TextBlock Text="Response:" FontWeight="Bold"/>
+                        <TextBox x:Name="ResponseBox" Height="140" Padding="10" VerticalScrollBarVisibility="Auto" TextWrapping="Wrap" IsReadOnly="True" Background="#F5F5F5" FontFamily="Courier New" FontSize="10" Margin="0,5,0,0"/>
+                    </StackPanel>
+
+                    <!-- Logging Tab (initially hidden) -->
+                    <StackPanel x:Name="LoggingTabContent" Visibility="Collapsed">
+                        <TextBlock Text="Detailed API Logs:" FontWeight="Bold"/>
+                        <TextBox x:Name="LoggingBox" Height="140" Padding="10" VerticalScrollBarVisibility="Auto" TextWrapping="Wrap" IsReadOnly="True" Background="#F5F5F5" FontFamily="Courier New" FontSize="10" Margin="0,5,0,0"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!-- Header -->
+        <Border DockPanel.Dock="Top" Background="#F0F0F0" Padding="20" Margin="0,0,0,10">
+            <StackPanel>
+                <TextBlock Text="Create WebSocket Order" FontSize="24" FontWeight="Bold"/>
+                <TextBlock Text="Configure and send a WebSocket order to the Verbit API" Foreground="Gray" Margin="0,5,0,0"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Main Content - ScrollViewer for long form (fills remaining space) -->
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <Border Padding="20">
+                <StackPanel>
+                    
+                    <!-- API Configuration Section -->
+                    <Border BorderBrush="#E0E0E0" BorderThickness="1" Padding="15" Background="#FAFAFA" Margin="0,0,0,15">
+                        <StackPanel>
+                            <TextBlock Text="API Configuration" FontSize="14" FontWeight="Bold"/>
+                            
+                            <StackPanel Margin="0,10,0,0">
+                                <TextBlock Text="API Token *" FontWeight="Bold"/>
+                                <PasswordBox x:Name="ApiTokenBox" Height="38" Padding="8"/>
+                            </StackPanel>
+
+                            <StackPanel Margin="0,10,0,0">
+                                <TextBlock Text="Bearer Token Status" FontWeight="Bold"/>
+                                <TextBlock x:Name="TokenStatusLabel" Text="No bearer token generated" Foreground="Gray" FontStyle="Italic"/>
+                                <Button Content="Generate Bearer Token" Click="GenerateBearerTokenButton_Click" Height="35" Padding="10,5" Margin="0,5,0,0" Background="#28A745" Foreground="White" FontWeight="Bold" Width="180" HorizontalAlignment="Left"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                    
+                    <!-- Basic Information Section -->
+                    <Border BorderBrush="#E0E0E0" BorderThickness="1" Padding="15" Background="#FAFAFA" Margin="0,0,0,15">
+                        <StackPanel>
+                            <TextBlock Text="Basic Information" FontSize="14" FontWeight="Bold"/>
+                            
+                            <StackPanel Margin="0,10,0,0">
+                                <TextBlock Text="Order Name *" FontWeight="Bold"/>
+                                <TextBox x:Name="NameBox" Height="38" Padding="8" VerticalContentAlignment="Center"/>
+                            </StackPanel>
+
+                            <StackPanel Margin="0,10,0,0">
+                                <TextBlock Text="Client Transaction ID *" FontWeight="Bold"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="100"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox x:Name="ClientTransactionIdBox" Height="38" Padding="8" VerticalContentAlignment="Center" Grid.Column="0"/>
+                                    <Button Content="Generate" Click="GenerateTransactionIdButton_Click" Height="38" Grid.Column="1" Margin="10,0,0,0"/>
+                                </Grid>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Input Configuration Section -->
+                    <Border BorderBrush="#E0E0E0" BorderThickness="1" Padding="15" Background="#FAFAFA" Margin="0,0,0,15">
+                        <StackPanel>
+                            <TextBlock Text="Input Configuration" FontSize="14" FontWeight="Bold"/>
+                            
+                            <StackPanel Margin="0,10,0,0">
+                                <TextBlock Text="Input Type" FontWeight="Bold"/>
+                                <TextBox Text="websocket" Height="38" Padding="8" IsReadOnly="True" Background="#E8E8E8"/>
+                            </StackPanel>
+
+                            <StackPanel Margin="0,10,0,0">
+                                <TextBlock Text="Language *" FontWeight="Bold"/>
+                                <TextBox x:Name="InputLanguageBox" Height="38" Padding="8" Text="en-US" VerticalContentAlignment="Center"/>
+                            </StackPanel>
+
+                            <StackPanel Margin="0,10,0,0">
+                                <TextBlock Text="Facility ID *" FontWeight="Bold"/>
+                                <TextBox x:Name="FacilityIdBox" Height="38" Padding="8" VerticalContentAlignment="Center"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Schedule Configuration Section -->
+                    <Border BorderBrush="#E0E0E0" BorderThickness="1" Padding="15" Background="#FAFAFA" Margin="0,0,0,15">
+                        <StackPanel>
+                            <TextBlock Text="Schedule Configuration" FontSize="14" FontWeight="Bold"/>
+                            
+                            <Grid Margin="0,10,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="Start Date *" FontWeight="Bold"/>
+                                    <DatePicker x:Name="StartDatePicker" Height="38" Padding="8"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Margin="15,0,0,0">
+                                    <TextBlock Text="Start Time (HH:MM:SS) *" FontWeight="Bold"/>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBox x:Name="StartHourBox" Height="38" Padding="8" Text="09" VerticalContentAlignment="Center" Grid.Column="0"/>
+                                        <TextBox x:Name="StartMinuteBox" Height="38" Padding="8" Text="40" VerticalContentAlignment="Center" Grid.Column="1" Margin="5,0,0,0"/>
+                                        <TextBox x:Name="StartSecondBox" Height="38" Padding="8" Text="00" VerticalContentAlignment="Center" Grid.Column="2" Margin="5,0,0,0"/>
+                                    </Grid>
+                                </StackPanel>
+                            </Grid>
+
+                            <StackPanel Margin="0,10,0,0">
+                                <TextBlock Text="Start At Preview (ISO 8601)" FontWeight="Bold"/>
+                                <TextBlock x:Name="StartAtPreviewLabel" Text="Preview: (not set)" Foreground="Gray" FontStyle="Italic"/>
+                                <TextBox x:Name="StartAtBox" Height="38" Padding="8" IsReadOnly="True" Background="#E8E8E8" Margin="0,5,0,0"/>
+                            </StackPanel>
+
+                            <Grid Margin="0,10,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="Max Duration (minutes) *" FontWeight="Bold"/>
+                                    <TextBox x:Name="MaxDurationBox" Height="38" Padding="8" Text="120" VerticalContentAlignment="Center"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Margin="15,0,0,0">
+                                    <TextBlock Text="Timezone *" FontWeight="Bold"/>
+                                    <TextBox x:Name="TimezoneBox" Height="38" Padding="8" Text="America/Los_Angeles" VerticalContentAlignment="Center"/>
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Output Products Section -->
+                    <Border BorderBrush="#E0E0E0" BorderThickness="1" Padding="15" Background="#FAFAFA" Margin="0,0,0,15">
+                        <StackPanel>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Output Products" FontSize="14" FontWeight="Bold" Grid.Column="0"/>
+                                <Button Content="+ Add Product" Click="AddProductButton_Click" Height="38" Padding="10,5" Grid.Column="1"/>
+                            </Grid>
+
+                            <ScrollViewer x:Name="ProductsScrollViewer" Height="300" VerticalScrollBarVisibility="Auto" Margin="0,10,0,0">
+                                <StackPanel x:Name="ProductsStackPanel"/>
+                            </ScrollViewer>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Settings Section -->
+                    <Border BorderBrush="#E0E0E0" BorderThickness="1" Padding="15" Background="#FAFAFA" Margin="0,0,0,15">
+                        <StackPanel>
+                            <TextBlock Text="Settings" FontSize="14" FontWeight="Bold"/>
+
+                            <!-- ASR Settings -->
+                            <Border BorderBrush="#D0D0D0" BorderThickness="1" Padding="10" Background="White" Margin="0,10,0,0">
+                                <StackPanel>
+                                    <TextBlock Text="ASR Settings" FontWeight="Bold" FontSize="12"/>
+                                    <CheckBox x:Name="ProfanityFilterCheckBox" Content="Profanity Filter" IsChecked="True" Margin="0,5,0,0"/>
+                                    <CheckBox x:Name="AtmosphericsCheckBox" Content="Atmospherics" IsChecked="False" Margin="0,5,0,0"/>
+                                    <CheckBox x:Name="DisfluenciesFilterCheckBox" Content="Disfluencies Filter" IsChecked="False" Margin="0,5,0,0"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Caption Settings -->
+                            <Grid Margin="0,10,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="Captions Placement ID" FontWeight="Bold"/>
+                                    <TextBox x:Name="CaptionsPlacementIdBox" Height="38" Padding="8" Text="9" VerticalContentAlignment="Center"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Margin="15,0,0,0">
+                                    <TextBlock Text="Case Type" FontWeight="Bold"/>
+                                    <ComboBox x:Name="CaseTypeCombo" Height="38" Padding="8">
+                                        <ComboBoxItem>upper</ComboBoxItem>
+                                        <ComboBoxItem>lower</ComboBoxItem>
+                                        <ComboBoxItem>mixed</ComboBoxItem>
+                                    </ComboBox>
+                                </StackPanel>
+                            </Grid>
+
+                            <Grid Margin="0,10,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="Speaker Change Type" FontWeight="Bold"/>
+                                    <TextBox x:Name="SpeakerChangeTypeBox" Height="38" Padding="8" Text=">>" VerticalContentAlignment="Center"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Margin="15,0,0,0">
+                                    <TextBlock Text="Speaker Sensitivity" FontWeight="Bold"/>
+                                    <ComboBox x:Name="SpeakerSensitivityCombo" Height="38" Padding="8">
+                                        <ComboBoxItem>turn_taking_conversation</ComboBoxItem>
+                                        <ComboBoxItem>high</ComboBoxItem>
+                                        <ComboBoxItem>low</ComboBoxItem>
+                                    </ComboBox>
+                                </StackPanel>
+                            </Grid>
+
+                            <StackPanel Margin="0,10,0,0">
+                                <TextBlock Text="Captions Stream Initial State" FontWeight="Bold"/>
+                                <ComboBox x:Name="CaptionsStreamStateCombo" Height="38" Padding="8">
+                                    <ComboBoxItem>block</ComboBoxItem>
+                                    <ComboBoxItem>open</ComboBoxItem>
+                                </ComboBox>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Action Buttons -->
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,15,0,15">
+                        <Button x:Name="SubmitButton" Content="Create Order" Width="120" Height="40" Background="#007ACC" Foreground="White" FontWeight="Bold" Click="SubmitButton_Click"/>
+                        <Button x:Name="ClearButton" Content="Clear" Width="100" Height="40" Background="#6C757D" Foreground="White" FontWeight="Bold" Click="ClearButton_Click" Margin="10,0,0,0"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </ScrollViewer>
+    </DockPanel>
+</Window>
+
